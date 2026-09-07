@@ -27,7 +27,7 @@ body{
 body.light-mode{background:#f6f7fb !important;}
 *{scrollbar-width:thin;scrollbar-color:rgba(var(--muja-rgb-primary,255,107,43),.55) transparent;}
 :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:none !important;box-shadow:var(--pro-focus) !important;}
-:where(button,.btn,.btn-primary,.btn-secondary,.btn-ghost,.action-btn,.action-btn1,.m-btn,.mbtn){min-height:40px;}
+:where(button,.btn,.btn-primary,.btn-secondary,.btn-ghost,.action-btn,.action-btn1,.m-btn,.mbtn){min-height:26px;}
 :where(input,select,textarea){font:inherit;}
 :where(input:not([type="checkbox"]):not([type="radio"]),select,textarea){min-height:44px;border-radius:12px !important;}
 img{max-width:100%;}
