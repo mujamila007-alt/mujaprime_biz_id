@@ -88,20 +88,54 @@ body.light-mode .muja-header{background:rgba(255,255,255,.9) !important;}
 
 /* Desktop secondary navigation */
 @media (min-width:769px){
-  .muja-sidebar{
-    position:sticky !important;top:var(--pro-header-h) !important;
+  /* Desktop sidebar harus menjadi secondary navigation horizontal.
+     theme.css lama memakai gaya drawer mobile secara global dengan !important,
+     jadi seluruh properti drawer di-reset di sini. */
+  #sidebar-toggle{display:none !important;}
+  .sidebar-overlay{
+    display:none !important;opacity:0 !important;visibility:hidden !important;
+    pointer-events:none !important;position:fixed !important;
+  }
+  .muja-sidebar,
+  #sidebar-toggle:checked ~ .muja-sidebar{
+    position:sticky !important;
+    top:var(--pro-header-h) !important;
+    left:auto !important;right:auto !important;bottom:auto !important;
     width:min(calc(100% - (var(--pro-gutter) * 2)),var(--pro-max)) !important;
-    margin:8px auto 0 !important;border:1px solid var(--pro-border-soft) !important;
-    border-radius:14px !important;background:rgba(16,19,29,.7) !important;overflow:hidden !important;
+    height:auto !important;min-height:0 !important;max-height:none !important;
+    margin:8px auto 0 !important;padding:0 !important;
+    transform:none !important;transition:none !important;
+    display:block !important;flex-direction:initial !important;
+    border:1px solid var(--pro-border-soft) !important;border-radius:14px !important;
+    background:rgba(16,19,29,.7) !important;overflow:hidden !important;
     box-shadow:0 8px 25px rgba(0,0,0,.12) !important;
     backdrop-filter:blur(14px) !important;-webkit-backdrop-filter:blur(14px) !important;
+    z-index:80 !important;
   }
   body.light-mode .muja-sidebar{background:rgba(255,255,255,.88) !important;}
-  .sidebar-content{max-width:none !important;margin:0 !important;padding:0 !important;overflow-x:auto;scrollbar-width:none;}
+  .sidebar-header,.sidebar-footer,.sidebar-close{display:none !important;}
+  .sidebar-content{
+    display:block !important;max-width:none !important;width:100% !important;
+    margin:0 !important;padding:0 !important;overflow-x:auto !important;overflow-y:hidden !important;
+    scrollbar-width:none;
+  }
   .sidebar-content::-webkit-scrollbar{display:none;}
-  .sidebar-menu{justify-content:flex-start !important;min-width:max-content !important;}
-  .sidebar-menu li{flex:0 0 auto !important;border:0 !important;}
-  .sidebar-menu li a{padding:12px 17px !important;font-size:11px !important;letter-spacing:.035em !important;border-radius:10px !important;margin:3px !important;}
+  .sidebar-menu{
+    display:flex !important;flex-direction:row !important;align-items:center !important;
+    justify-content:flex-start !important;gap:0 !important;
+    width:max-content !important;min-width:100% !important;
+    padding:3px !important;margin:0 !important;list-style:none !important;
+  }
+  .sidebar-menu li{
+    display:block !important;flex:1 0 auto !important;
+    border:0 !important;border-bottom:0 !important;text-align:center !important;
+  }
+  .sidebar-menu li a{
+    display:flex !important;align-items:center !important;justify-content:center !important;
+    gap:7px !important;padding:12px 17px !important;margin:0 !important;
+    font-size:11px !important;letter-spacing:.035em !important;
+    border-radius:10px !important;white-space:nowrap !important;
+  }
   .sidebar-menu li a:hover{background:rgba(var(--muja-rgb-primary,255,107,43),.11) !important;}
   .sidebar-menu li a::after{display:none !important;}
   .mobile-nav,.bottom-nav{display:none !important;}
