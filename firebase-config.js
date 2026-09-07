@@ -59,21 +59,54 @@
   }
 
   async function api(payload) {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify(serialize(payload))
-    });
-    let data = null;
-    try { data = await response.json(); } catch (_) {}
-    if (!response.ok) {
-      const err = new Error((data && data.error) || ('Database error HTTP ' + response.status));
-      err.status = response.status;
-      err.code = data && data.code;
-      throw err;
+    const isSafeRead = payload && (payload.action === 'query' || payload.action === 'getDoc');
+    const attempts = isSafeRead ? 2 : 1;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeout = controller ? setTimeout(() => controller.abort(), 15000) : null;
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store',
+          signal: controller ? controller.signal : undefined,
+          body: JSON.stringify(serialize(payload))
+        });
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+        if (!response.ok) {
+          const err = new Error((data && (data.error || data.message)) || ('Database error HTTP ' + response.status));
+          err.status = response.status;
+          err.code = data && data.code;
+          // Retry reads only for temporary server/network failures.
+          if (isSafeRead && attempt < attempts && [429, 502, 503, 504].includes(response.status)) {
+            await new Promise(r => setTimeout(r, 350 * attempt));
+            continue;
+          }
+          throw err;
+        }
+        return data || {};
+      } catch (err) {
+        lastError = err;
+        const temporary = err && (err.name === 'AbortError' || err instanceof TypeError);
+        if (isSafeRead && attempt < attempts && temporary) {
+          await new Promise(r => setTimeout(r, 350 * attempt));
+          continue;
+        }
+        if (err && err.name === 'AbortError') {
+          const timeoutErr = new Error('Koneksi database terlalu lama. Silakan coba lagi.');
+          timeoutErr.code = 'REQUEST_TIMEOUT';
+          throw timeoutErr;
+        }
+        throw err;
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
     }
-    return data || {};
+    throw lastError || new Error('Database tidak dapat dihubungi.');
   }
 
   class DocumentSnapshot {
@@ -138,7 +171,7 @@
       let stopped = false;
       let lastSignature = null;
       const run = async () => {
-        if (stopped) return;
+        if (stopped || (typeof document !== 'undefined' && document.hidden)) return;
         try {
           const snap = await this.get();
           const signature = JSON.stringify(snap.docs.map(d => [d.id, d._version]));
