@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const history = Array.isArray(body.messages) ? body.messages.slice(-8) : [];
     const system = String(body.system || 'Kamu AI Muja Prime. Jawab singkat dan membantu.').slice(0, 30000);
-    const allowedModels = new Set(['llama-3.3-70b-versatile','llama-3.1-8b-instant']);
-    const model = allowedModels.has(body.model) ? body.model : 'llama-3.3-70b-versatile';
+    const allowedModels = new Set(['openai/gpt-oss-20b','llama-3.1-8b-instant']);
+    const model = allowedModels.has(body.model) ? body.model : 'openai/gpt-oss-20b';
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
