@@ -31,7 +31,7 @@
     while(wrap.firstChild) document.body.appendChild(wrap.firstChild);
   }
 
-  var chatOpen=false, chatHistory=[];
+  var chatOpen=false, chatHistory=[], aiSending=false;
   var TRIGGER_KEYWORDS={
     youtube:['youtube','canva gratis','gratis','tutorial','video','channel','yt'],
     admin:['admin','hubungi','wa','whatsapp','kontak','bantuan','cs','customer service','komplain','masalah','error','gagal','tidak bisa','butuh bantuan','bantu dong','poin tidak bertambah','poin kurang','poin belum masuk','poin hilang','poin ga nambah','poin kok ga masuk','poin tidak ada','gak dapet poin','belum dapet poin','poin gak masuk','poin belum ditambahkan']
@@ -130,7 +130,81 @@
     }
   }
   window.toggleChat=function(){chatOpen=!chatOpen; var p=$('aiPopup'); if(p) p.classList.toggle('open',chatOpen); if(chatOpen && $('aiInput')) $('aiInput').focus();};
-  window.sendChat=async function(){var input=$('aiInput'); if(!input) return; var msg=input.value.trim(); if(!msg) return; addMsg(msg,'user'); saveAiChatLog('user',msg); input.value=''; chatHistory.push({role:'user',content:msg}); var keywords=detectKeywords(msg); var typing=$('aiTyping'); if(typing) typing.classList.add('show'); try{var response=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:(window.AI_WEB_CONFIG && window.AI_WEB_CONFIG.model)||'llama-3.3-70b-versatile',system:(window.AI_WEB_CONFIG && window.AI_WEB_CONFIG.pengetahuan)||'Kamu AI Muja Prime',messages:chatHistory.slice(-5)})}); if(!response.ok) throw new Error('HTTP '+response.status); var data=await response.json(); if(typing) typing.classList.remove('show'); var reply=data.reply||'Maaf, saya tidak mengerti.'; addMsg(reply,'bot'); saveAiChatLog('assistant',reply); chatHistory.push({role:'assistant',content:reply}); if(keywords.youtube||keywords.admin) setTimeout(function(){addButtons(keywords)},300);}catch(e){if(typing) typing.classList.remove('show'); var fallback='AI sedang offline. Silakan hubungi admin atau lihat YouTube MujaPrime.'; addMsg(fallback, 'bot'); saveAiChatLog('assistant',fallback); addButtons({youtube:true,admin:true});}};
+  window.sendChat=async function(){
+    var input=$('aiInput');
+    if(!input || aiSending) return;
+    var msg=input.value.trim();
+    if(!msg) return;
+
+    aiSending=true;
+    var sendBtn=document.querySelector('.ai-send');
+    if(sendBtn){sendBtn.disabled=true;sendBtn.style.opacity='.6';sendBtn.style.cursor='wait';}
+    input.disabled=true;
+
+    addMsg(msg,'user');
+    saveAiChatLog('user',msg);
+    input.value='';
+    chatHistory.push({role:'user',content:msg});
+    if(chatHistory.length>10) chatHistory=chatHistory.slice(-10);
+
+    var keywords=detectKeywords(msg);
+    var typing=$('aiTyping');
+    if(typing) typing.classList.add('show');
+
+    try{
+      var response=await fetch('/api/ai',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          system:(window.AI_WEB_CONFIG && window.AI_WEB_CONFIG.pengetahuan)||'Kamu AI MujaPrime. Jawab singkat dan membantu.',
+          messages:chatHistory.slice(-4)
+        })
+      });
+
+      var data=await response.json().catch(function(){return {};});
+
+      if(!response.ok){
+        var err=new Error((data && data.message) || ('HTTP '+response.status));
+        err.status=response.status;
+        err.code=data && data.error;
+        err.retryAfter=(data && data.retryAfter)||0;
+        throw err;
+      }
+
+      var reply=data.reply||'Maaf kak, saya belum bisa menjawab pertanyaan itu.';
+      addMsg(reply,'bot');
+      saveAiChatLog('assistant',reply);
+      chatHistory.push({role:'assistant',content:reply});
+      if(chatHistory.length>10) chatHistory=chatHistory.slice(-10);
+
+      if(keywords.youtube||keywords.admin){
+        setTimeout(function(){addButtons(keywords)},300);
+      }
+    }catch(e){
+      var fallback;
+      if(e && (e.status===429 || e.code==='RATE_LIMIT')){
+        var wait=Math.max(5,Number(e.retryAfter)||15);
+        fallback='AI sedang sibuk karena batas penggunaan sementara. Tunggu sekitar '+wait+' detik lalu kirim lagi ya kak.';
+      }else if(e && (e.status===401 || e.status===403 || e.code==='AI_AUTH_ERROR')){
+        fallback='Layanan AI sedang perlu dicek admin. Silakan coba lagi nanti atau hubungi Admin WA.';
+      }else if(e && (e.status===503 || e.code==='AI_NOT_CONFIGURED')){
+        fallback='Layanan AI belum aktif dengan benar. Silakan hubungi Admin WA.';
+      }else if(e && (e.status===504 || e.code==='AI_TIMEOUT')){
+        fallback='Respons AI sedang lambat. Silakan coba kirim lagi beberapa saat ya kak.';
+      }else{
+        fallback='AI sedang mengalami gangguan koneksi. Silakan coba lagi beberapa saat.';
+      }
+      addMsg(fallback,'bot');
+      saveAiChatLog('assistant',fallback);
+      if(keywords.youtube||keywords.admin) addButtons(keywords);
+    }finally{
+      if(typing) typing.classList.remove('show');
+      aiSending=false;
+      input.disabled=false;
+      if(sendBtn){sendBtn.disabled=false;sendBtn.style.opacity='';sendBtn.style.cursor='';}
+      input.focus();
+    }
+  };
 
   function init(){loadConfig(); injectStyle(); injectDom();}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
