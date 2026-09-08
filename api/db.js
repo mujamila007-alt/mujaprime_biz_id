@@ -12,6 +12,16 @@ const PUBLIC_ADD = new Set(['registrations','registered_emails','orders','access
 const PUBLIC_UPDATE = new Set(['registrations','registered_emails','access_tokens','poin_products','ai_chat_logs']);
 const PUBLIC_SET = new Set(['poin_redeems','ai_chat_logs']);
 
+let sharedPool = null;
+let schemaReady = null;
+
+function getPool() {
+  if (!sharedPool) {
+    sharedPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+  }
+  return sharedPool;
+}
+
 function jsonBody(req) {
   if (!req.body) return {};
   if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
@@ -38,13 +48,8 @@ function timestampNow() {
   return { __mujaType: 'timestamp', iso: new Date().toISOString() };
 }
 
-function deepClone(v) {
-  return v == null ? v : JSON.parse(JSON.stringify(v));
-}
-
-function sameJson(a, b) {
-  try { return JSON.stringify(a) === JSON.stringify(b); } catch (_) { return false; }
-}
+function deepClone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+function sameJson(a, b) { try { return JSON.stringify(a) === JSON.stringify(b); } catch (_) { return false; } }
 
 function resolveValue(incoming, previous) {
   if (Array.isArray(incoming)) return incoming.map(v => resolveValue(v, undefined));
@@ -97,16 +102,7 @@ function comparable(v) {
   return v;
 }
 
-function matchesFilter(data, f) {
-  if (!f || f.op !== '==') return false;
-  return sameJson(comparable(getField(data, f.field)), comparable(f.value));
-}
-
-function sortValue(v) {
-  v = comparable(v);
-  if (v == null) return '';
-  return v;
-}
+function sortValue(v) { v = comparable(v); return v == null ? '' : v; }
 
 function hasFilter(filters, fields) {
   return (filters || []).some(f => fields.includes(f.field) && f.op === '==' && String(f.value || '').length > 0);
@@ -127,6 +123,8 @@ function publicReadAllowed(action, collection, payload) {
 function publicWriteAllowed(op, existing) {
   if (op.type === 'add') return PUBLIC_ADD.has(op.collection);
   if (op.type === 'set') {
+    // set pada dokumen baru setara dengan add dan dibutuhkan untuk batch checkout atomik.
+    if (!existing && PUBLIC_ADD.has(op.collection)) return true;
     if (PUBLIC_SET.has(op.collection)) return true;
     if (op.collection === 'settings' && op.id === 'canva_config' && !existing) return true;
     return false;
@@ -147,32 +145,53 @@ function publicWriteAllowed(op, existing) {
   return false;
 }
 
-async function ensureSchema(client) {
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS muja_documents (
-      collection_name TEXT NOT NULL,
-      document_id TEXT NOT NULL,
-      data JSONB NOT NULL DEFAULT '{}'::jsonb,
-      version BIGINT NOT NULL DEFAULT 1,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY (collection_name, document_id)
-    );
-  `);
-  await client.query(`CREATE INDEX IF NOT EXISTS muja_documents_collection_idx ON muja_documents (collection_name);`);
-  await client.query(`CREATE INDEX IF NOT EXISTS muja_documents_data_gin_idx ON muja_documents USING GIN (data);`);
+async function ensureSchemaOnce() {
+  if (!schemaReady) {
+    const pool = getPool();
+    schemaReady = (async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS muja_documents (
+          collection_name TEXT NOT NULL,
+          document_id TEXT NOT NULL,
+          data JSONB NOT NULL DEFAULT '{}'::jsonb,
+          version BIGINT NOT NULL DEFAULT 1,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (collection_name, document_id)
+        );
+      `);
+      await pool.query(`CREATE INDEX IF NOT EXISTS muja_documents_collection_idx ON muja_documents (collection_name);`);
+      await pool.query(`CREATE INDEX IF NOT EXISTS muja_documents_data_gin_idx ON muja_documents USING GIN (data);`);
+    })().catch(err => { schemaReady = null; throw err; });
+  }
+  return schemaReady;
 }
 
-async function readRow(client, collection, id, lock = false) {
+async function readRow(executor, collection, id, lock = false) {
   const q = `SELECT document_id AS id, data, version FROM muja_documents WHERE collection_name=$1 AND document_id=$2${lock ? ' FOR UPDATE' : ''}`;
-  const { rows } = await client.query(q, [collection, id]);
+  const { rows } = await executor.query(q, [collection, id]);
   return rows[0] || null;
 }
 
-async function writeOp(client, op, isAdmin, lock = false) {
+function buildFilteredQuery(collection, filters) {
+  const params = [collection];
+  let sql = 'SELECT document_id AS id, data, version FROM muja_documents WHERE collection_name=$1';
+  for (const f of (filters || [])) {
+    if (!f || f.op !== '==' || !f.field) continue;
+    const path = String(f.field).split('.').filter(Boolean);
+    params.push(path);
+    const pathIdx = params.length;
+    params.push(JSON.stringify(f.value));
+    const valueIdx = params.length;
+    sql += ` AND data #> $${pathIdx}::text[] = $${valueIdx}::jsonb`;
+  }
+  return { sql, params };
+}
+
+async function writeOp(executor, op, isAdmin, lock = false) {
   validateCollection(op.collection);
   validateId(op.id);
-  const current = await readRow(client, op.collection, op.id, lock);
+  const current = await readRow(executor, op.collection, op.id, lock);
   const existing = current ? current.data : null;
 
   if (!isAdmin && !publicWriteAllowed(op, existing)) {
@@ -196,34 +215,24 @@ async function writeOp(client, op, isAdmin, lock = false) {
       e.status = 403;
       throw e;
     }
-    await client.query('DELETE FROM muja_documents WHERE collection_name=$1 AND document_id=$2', [op.collection, op.id]);
+    await executor.query('DELETE FROM muja_documents WHERE collection_name=$1 AND document_id=$2', [op.collection, op.id]);
     return { id: op.id, deleted: true };
   }
 
   let next;
   if (op.type === 'update') {
-    if (!current) {
-      const e = new Error('Dokumen tidak ditemukan.');
-      e.status = 404;
-      throw e;
-    }
+    if (!current) { const e = new Error('Dokumen tidak ditemukan.'); e.status = 404; throw e; }
     next = applyPatch(existing, op.data || {});
   } else if (op.type === 'set') {
     next = applySet(existing, op.data || {}, !!op.merge);
   } else if (op.type === 'add') {
-    if (current) {
-      const e = new Error('Document ID sudah ada.');
-      e.status = 409;
-      throw e;
-    }
+    if (current) { const e = new Error('Document ID sudah ada.'); e.status = 409; throw e; }
     next = resolveValue(op.data || {}, {});
   } else {
-    const e = new Error('Operasi tulis tidak dikenal.');
-    e.status = 400;
-    throw e;
+    const e = new Error('Operasi tulis tidak dikenal.'); e.status = 400; throw e;
   }
 
-  const { rows } = await client.query(`
+  const { rows } = await executor.query(`
     INSERT INTO muja_documents (collection_name, document_id, data, version, created_at, updated_at)
     VALUES ($1,$2,$3::jsonb,1,NOW(),NOW())
     ON CONFLICT (collection_name, document_id)
@@ -237,10 +246,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!process.env.DATABASE_URL) return res.status(500).json({ error: 'DATABASE_URL belum dikonfigurasi di Vercel.' });
 
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const client = await pool.connect();
+  const started = Date.now();
   try {
-    await ensureSchema(client);
+    await ensureSchemaOnce();
+    const pool = getPool();
     const payload = jsonBody(req);
     const action = String(payload.action || '');
     const session = readAdminSession(req);
@@ -249,17 +258,18 @@ export default async function handler(req, res) {
     if (action === 'getDoc') {
       validateCollection(payload.collection); validateId(payload.id);
       if (!isAdmin && !publicReadAllowed(action, payload.collection, payload)) return res.status(403).json({ error: 'Data ini memerlukan login admin.' });
-      const row = await readRow(client, payload.collection, payload.id, false);
+      const row = await readRow(pool, payload.collection, payload.id, false);
+      res.setHeader('Server-Timing', `db;dur=${Date.now()-started}`);
       return res.status(200).json({ doc: row ? { id: row.id, data: row.data, version: Number(row.version), exists: true } : { id: payload.id, exists: false } });
     }
 
     if (action === 'query') {
       validateCollection(payload.collection);
       if (!isAdmin && !publicReadAllowed(action, payload.collection, payload)) return res.status(403).json({ error: 'Query ini memerlukan login admin.' });
-      const { rows } = await client.query('SELECT document_id AS id, data, version FROM muja_documents WHERE collection_name=$1', [payload.collection]);
-      let docs = rows.map(r => ({ id: r.id, data: r.data, version: Number(r.version), exists: true }));
       const filters = Array.isArray(payload.filters) ? payload.filters : [];
-      docs = docs.filter(d => filters.every(f => matchesFilter(d.data, f)));
+      const built = buildFilteredQuery(payload.collection, filters);
+      const { rows } = await pool.query(built.sql, built.params);
+      let docs = rows.map(r => ({ id: r.id, data: r.data, version: Number(r.version), exists: true }));
       if (payload.orderBy && payload.orderBy.field) {
         const dir = payload.orderBy.direction === 'desc' ? -1 : 1;
         const field = payload.orderBy.field;
@@ -274,26 +284,30 @@ export default async function handler(req, res) {
       const max = isAdmin ? 5000 : 500;
       const limit = Math.min(Math.max(Number(payload.limit) || docs.length || 1, 1), max);
       docs = docs.slice(0, limit);
+      res.setHeader('Server-Timing', `db;dur=${Date.now()-started}`);
       return res.status(200).json({ docs });
     }
 
     if (['add','set','update','delete'].includes(action)) {
-      const result = await writeOp(client, { type: action, collection: payload.collection, id: payload.id, data: payload.data, merge: payload.merge, expectedVersion: payload.expectedVersion }, isAdmin, false);
+      const result = await writeOp(pool, { type: action, collection: payload.collection, id: payload.id, data: payload.data, merge: payload.merge, expectedVersion: payload.expectedVersion }, isAdmin, false);
       return res.status(200).json({ ok: true, ...result });
     }
 
     if (action === 'batch') {
       const ops = Array.isArray(payload.ops) ? payload.ops : [];
       if (!ops.length || ops.length > 500) return res.status(400).json({ error: 'Batch kosong atau terlalu besar.' });
-      await client.query('BEGIN');
+      const client = await pool.connect();
       try {
+        await client.query('BEGIN');
         const results = [];
         for (const op of ops) results.push(await writeOp(client, op, isAdmin, true));
         await client.query('COMMIT');
         return res.status(200).json({ ok: true, results });
       } catch (e) {
-        await client.query('ROLLBACK');
+        await client.query('ROLLBACK').catch(()=>{});
         throw e;
+      } finally {
+        client.release();
       }
     }
 
@@ -301,8 +315,5 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error(e);
     return res.status(e.status || 500).json({ error: e.message || 'Database error.', code: e.code || undefined });
-  } finally {
-    client.release();
-    await pool.end().catch(() => {});
   }
 }

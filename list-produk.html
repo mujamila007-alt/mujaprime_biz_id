@@ -10,27 +10,10 @@
 <link rel="stylesheet" href="/theme.css?v=20260603-theme-chat-global-v3">
 <script src="/theme.js?v=20260603-theme-chat-global-v3"></script>
     <script>
+    // Cache tidak lagi dihapus pada setiap halaman. Static assets boleh memakai cache browser/SW.
     (function() {
-        var MUJA_BUILD = '20260603-theme-chat-global-v3';
+        var MUJA_BUILD = '20260908-performance-payment-v1';
         window.MUJA_BUILD = MUJA_BUILD;
-
-        // Bersihkan Cache Storage lama tanpa memaksa reload halaman.
-        if ('caches' in window) {
-            caches.keys().then(function(keys) {
-                return Promise.all(keys.map(function(key) { return caches.delete(key); }));
-            }).catch(function(){});
-        }
-
-        // Kirim pesan clear cache ke service worker lama, tanpa auto reload.
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                registrations.forEach(function(reg) {
-                    if (reg.active) {
-                        try { reg.active.postMessage({ type: 'MUJA_CLEAR_CACHE', build: MUJA_BUILD }); } catch(e) {}
-                    }
-                });
-            }).catch(function(){});
-        }
     })();
     </script>
 
@@ -882,7 +865,7 @@
     </nav>
 
     <script src="/theme.js?v=20260603-theme-chat-global-v3"></script>
-    <script src="/firebase-config.js?v=20260603-theme-chat-global-v3"></script>
+    <script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
     
     <script>
         const GROUP_ID = new URLSearchParams(window.location.search).get('group') || '';
@@ -1107,21 +1090,8 @@
 
         function clearCacheAndGo(e) {
     e.preventDefault();
-    
-    // Hapus session storage
-    sessionStorage.clear();
-    
-    // Hapus cache browser
-    if ('caches' in window) {
-        caches.keys().then(function(names) {
-            names.forEach(function(name) {
-                caches.delete(name);
-            });
-        });
-    }
-    
-    // Force reload bersih
-    window.location.href = '/?v=' + Date.now();
+    // Tidak menghapus Cache Storage/sessionStorage. Cukup kembali ke beranda.
+    window.location.href = '/';
 }
 
         async function loadCollection() {
@@ -1139,8 +1109,11 @@
             }
 
             try {
-                // Fetch info produk utama
-                const groupSnap = await db.collection('products').doc(GROUP_ID).get();
+                // Informasi koleksi dan item diambil paralel agar loading tidak berantai.
+                const [groupSnap, snap] = await Promise.all([
+                    db.collection('products').doc(GROUP_ID).get(),
+                    db.collection('collection_items').where('groupId', '==', GROUP_ID).get()
+                ]);
                 
                 if (groupSnap.exists) {
                     const data = groupSnap.data();
@@ -1148,11 +1121,6 @@
                     document.getElementById('collectionDesc').textContent = data.description || 'Pilih produk favorit Anda dari koleksi ini';
                     document.title = (data.name || 'Koleksi') + ' · Muja Prime';
                 }
-
-                // Fetch items
-                const snap = await db.collection('collection_items')
-                    .where('groupId', '==', GROUP_ID)
-                    .get();
 
                 allItems = [];
                 snap.forEach(doc => {

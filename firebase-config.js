@@ -58,55 +58,148 @@
     return value;
   }
 
+  const CACHEABLE_COLLECTIONS = new Set(['products','collection_items','settings','sections','leaderboard','poin_products']);
+  const memoryReadCache = new Map();
+  const inflightReads = new Map();
+  const READ_CACHE_TTL = 45000;
+  const CACHE_PREFIX = 'muja_db_v2_';
+
+  function hashText(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36);
+  }
+
+  function cacheKeyFor(payload) {
+    return CACHE_PREFIX + hashText(JSON.stringify(serialize(payload)));
+  }
+
+  function docCacheKey(collection, id) {
+    return CACHE_PREFIX + 'doc_' + hashText(String(collection) + '/' + String(id));
+  }
+
+  function isCacheableRead(payload) {
+    return !!(payload && (payload.action === 'query' || payload.action === 'getDoc') && CACHEABLE_COLLECTIONS.has(payload.collection));
+  }
+
+  function readStored(key) {
+    const now = Date.now();
+    const mem = memoryReadCache.get(key);
+    if (mem && mem.expires > now) return mem.data;
+    if (mem) memoryReadCache.delete(key);
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return null;
+      const item = JSON.parse(raw);
+      if (!item || item.expires <= now) { sessionStorage.removeItem(key); return null; }
+      memoryReadCache.set(key, item);
+      return item.data;
+    } catch (_) { return null; }
+  }
+
+  function writeStored(key, data) {
+    const item = { expires: Date.now() + READ_CACHE_TTL, data };
+    memoryReadCache.set(key, item);
+    try { sessionStorage.setItem(key, JSON.stringify(item)); } catch (_) {}
+  }
+
+  function getCachedRead(payload) {
+    if (!isCacheableRead(payload)) return null;
+    if (payload.action === 'getDoc' && payload.id) {
+      const docCached = readStored(docCacheKey(payload.collection, payload.id));
+      if (docCached) return { doc: docCached };
+    }
+    return readStored(cacheKeyFor(payload));
+  }
+
+  function cacheRead(payload, data) {
+    if (!isCacheableRead(payload) || !data) return;
+    writeStored(cacheKeyFor(payload), data);
+    if (payload.action === 'getDoc' && data.doc && data.doc.id) {
+      writeStored(docCacheKey(payload.collection, data.doc.id), data.doc);
+    }
+    if (payload.action === 'query' && Array.isArray(data.docs)) {
+      data.docs.forEach(doc => { if (doc && doc.id) writeStored(docCacheKey(payload.collection, doc.id), doc); });
+    }
+  }
+
+  function clearReadCache() {
+    memoryReadCache.clear();
+    try {
+      const keys = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith(CACHE_PREFIX)) keys.push(k);
+      }
+      keys.forEach(k => sessionStorage.removeItem(k));
+    } catch (_) {}
+  }
+
   async function api(payload) {
     const isSafeRead = payload && (payload.action === 'query' || payload.action === 'getDoc');
-    const attempts = isSafeRead ? 2 : 1;
-    let lastError = null;
+    const cacheable = isCacheableRead(payload);
+    const cached = cacheable ? getCachedRead(payload) : null;
+    if (cached) return cached;
 
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeout = controller ? setTimeout(() => controller.abort(), 15000) : null;
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          credentials: 'same-origin',
-          cache: 'no-store',
-          signal: controller ? controller.signal : undefined,
-          body: JSON.stringify(serialize(payload))
-        });
-        let data = null;
-        try { data = await response.json(); } catch (_) {}
-        if (!response.ok) {
-          const err = new Error((data && (data.error || data.message)) || ('Database error HTTP ' + response.status));
-          err.status = response.status;
-          err.code = data && data.code;
-          // Retry reads only for temporary server/network failures.
-          if (isSafeRead && attempt < attempts && [429, 502, 503, 504].includes(response.status)) {
-            await new Promise(r => setTimeout(r, 350 * attempt));
+    const inflightKey = isSafeRead ? cacheKeyFor(payload) : null;
+    if (inflightKey && inflightReads.has(inflightKey)) return inflightReads.get(inflightKey);
+
+    const perform = async () => {
+      const attempts = isSafeRead ? 2 : 1;
+      let lastError = null;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutMs = isSafeRead ? 10000 : 30000;
+        const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            signal: controller ? controller.signal : undefined,
+            body: JSON.stringify(serialize(payload))
+          });
+          let data = null;
+          try { data = await response.json(); } catch (_) {}
+          if (!response.ok) {
+            const err = new Error((data && (data.error || data.message)) || ('Database error HTTP ' + response.status));
+            err.status = response.status;
+            err.code = data && data.code;
+            if (isSafeRead && attempt < attempts && [429, 502, 503, 504].includes(response.status)) {
+              await new Promise(r => setTimeout(r, 200 * attempt));
+              continue;
+            }
+            throw err;
+          }
+          const result = data || {};
+          if (cacheable) cacheRead(payload, result);
+          if (!isSafeRead) clearReadCache();
+          return result;
+        } catch (err) {
+          lastError = err;
+          const temporary = err && (err.name === 'AbortError' || err instanceof TypeError);
+          if (isSafeRead && attempt < attempts && temporary) {
+            await new Promise(r => setTimeout(r, 200 * attempt));
             continue;
           }
+          if (err && err.name === 'AbortError') {
+            const timeoutErr = new Error(isSafeRead ? 'Koneksi database terlalu lama. Silakan coba lagi.' : 'Penyimpanan data terlalu lama. Silakan coba lagi.');
+            timeoutErr.code = 'REQUEST_TIMEOUT';
+            throw timeoutErr;
+          }
           throw err;
+        } finally {
+          if (timeout) clearTimeout(timeout);
         }
-        return data || {};
-      } catch (err) {
-        lastError = err;
-        const temporary = err && (err.name === 'AbortError' || err instanceof TypeError);
-        if (isSafeRead && attempt < attempts && temporary) {
-          await new Promise(r => setTimeout(r, 350 * attempt));
-          continue;
-        }
-        if (err && err.name === 'AbortError') {
-          const timeoutErr = new Error('Koneksi database terlalu lama. Silakan coba lagi.');
-          timeoutErr.code = 'REQUEST_TIMEOUT';
-          throw timeoutErr;
-        }
-        throw err;
-      } finally {
-        if (timeout) clearTimeout(timeout);
       }
-    }
-    throw lastError || new Error('Database tidak dapat dihubungi.');
+      throw lastError || new Error('Database tidak dapat dihubungi.');
+    };
+
+    const promise = perform();
+    if (inflightKey) inflightReads.set(inflightKey, promise);
+    try { return await promise; }
+    finally { if (inflightKey) inflightReads.delete(inflightKey); }
   }
 
   class DocumentSnapshot {

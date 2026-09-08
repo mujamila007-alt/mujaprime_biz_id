@@ -13,27 +13,10 @@
 <script src="/theme.js?v=20260603-theme-persist-v4"></script>
 
     <script>
+    // Cache tidak lagi dihapus pada setiap halaman. Static assets boleh memakai cache browser/SW.
     (function() {
-        var MUJA_BUILD = '20260603-theme-persist-v4';
+        var MUJA_BUILD = '20260908-performance-payment-v1';
         window.MUJA_BUILD = MUJA_BUILD;
-
-        // Bersihkan Cache Storage lama tanpa memaksa reload halaman.
-        if ('caches' in window) {
-            caches.keys().then(function(keys) {
-                return Promise.all(keys.map(function(key) { return caches.delete(key); }));
-            }).catch(function(){});
-        }
-
-        // Kirim pesan clear cache ke service worker lama, tanpa auto reload.
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                registrations.forEach(function(reg) {
-                    if (reg.active) {
-                        try { reg.active.postMessage({ type: 'MUJA_CLEAR_CACHE', build: MUJA_BUILD }); } catch(e) {}
-                    }
-                });
-            }).catch(function(){});
-        }
     })();
     </script>
 
@@ -679,7 +662,7 @@
     <link rel="stylesheet" href="/install-popup.css?v=20260604-install-akun-v1">
     <script defer src="/install-popup.js?v=20260604-install-akun-v1"></script>
 
-    <script src="/firebase-config.js?v=20260903-vercel-postgres-v1"></script>
+    <script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
 
     <!-- MUJA PRIME Professional Responsive Upgrade -->
     <link rel="stylesheet" href="/professional.css?v=20260907-pro-v3-adminfix">

@@ -31,7 +31,8 @@ async function loadPaymentData() {  // ✅ DITAMBAHKAN async
         customerName: sessionStorage.getItem('payment_customer_name'),
         customerWa: sessionStorage.getItem('payment_customer_wa'),
         customerEmail: (sessionStorage.getItem('payment_customer_email') || localStorage.getItem('muja_user_email') || '').trim().toLowerCase(),
-        poin: parseInt(sessionStorage.getItem('payment_poin')) || 0
+        poin: parseInt(sessionStorage.getItem('payment_poin')) || 0,
+        redirectPage: sessionStorage.getItem('payment_redirect_page') || ''
     };
     
     if (!paymentData.productId || !paymentData.method) {
@@ -44,30 +45,29 @@ async function loadPaymentData() {  // ✅ DITAMBAHKAN async
     document.getElementById('totalAmount').textContent = formatRupiah(paymentData.price);
     document.getElementById('poinReward').textContent = '+' + paymentData.poin.toLocaleString('id-ID') + ' Poin';
     
-  // ✅ Ambil redirectPage dari produk ATAU collection_items
-try {
-    // Coba dari products dulu
-    let productSnap = await db.collection('products').doc(paymentData.productId).get();
-    
-    if (productSnap.exists) {
-        paymentData.redirectPage = productSnap.data().redirectPage || 'status-aktif';
-    } else {
-        // Kalau tidak ada di products, coba dari collection_items
-        let itemSnap = await db.collection('collection_items').doc(paymentData.productId).get();
-        if (itemSnap.exists) {
-            paymentData.redirectPage = itemSnap.data().redirectPage || 'status-aktif';
-            // Juga ambil poin dari item koleksi kalau ada
-            if (itemSnap.data().poinReward && !paymentData.poin) {
-                paymentData.poin = itemSnap.data().poinReward || 0;
-                document.getElementById('poinReward').textContent = '+' + paymentData.poin.toLocaleString('id-ID') + ' Poin';
+  // Redirect page biasanya sudah dibawa dari halaman detail, jadi payment bisa tampil tanpa menunggu database.
+    if (!paymentData.redirectPage) {
+        try {
+            const [productSnap, itemSnap] = await Promise.all([
+                db.collection('products').doc(paymentData.productId).get(),
+                db.collection('collection_items').doc(paymentData.productId).get()
+            ]);
+            const source = productSnap.exists ? productSnap : itemSnap;
+            if (source.exists) {
+                const sourceData = source.data();
+                paymentData.redirectPage = sourceData.redirectPage || 'status-aktif';
+                if (sourceData.poinReward && !paymentData.poin) {
+                    paymentData.poin = sourceData.poinReward || 0;
+                    document.getElementById('poinReward').textContent = '+' + paymentData.poin.toLocaleString('id-ID') + ' Poin';
+                }
+            } else {
+                paymentData.redirectPage = 'status-aktif';
             }
-        } else {
+        } catch(e) {
+            console.warn('Redirect payment fallback:', e);
             paymentData.redirectPage = 'status-aktif';
         }
     }
-} catch(e) {
-    paymentData.redirectPage = 'status-aktif';
-}
     
     renderPaymentDetail();
     startCountdown();
@@ -200,7 +200,7 @@ function handleFileSelect(event) {
             let width = img.width;
             let height = img.height;
             
-            const maxSize = 800;
+            const maxSize = 700;
             if (width > maxSize || height > maxSize) {
                 if (width > height) {
                     height = (height * maxSize) / width;
@@ -216,10 +216,10 @@ function handleFileSelect(event) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.68);
             
             const compressedSize = Math.round((compressedDataUrl.length * 3) / 4);
-            if (compressedSize > 1 * 1024 * 1024) {
+            if (compressedSize > 700 * 1024) {
                 alert('⚠️ Gambar masih terlalu besar setelah kompresi! Silakan pilih gambar yang lebih kecil.');
                 event.target.value = '';
                 return;
@@ -304,20 +304,27 @@ async function verifyPayment() {
         showToast('❌ Waktu pembayaran telah habis!', 'error');
         return;
     }
-    
     if (!uploadedImageBase64) {
         showToast('⚠️ Silakan upload bukti pembayaran terlebih dahulu!', 'error');
         return;
     }
-    
+
     const btn = document.getElementById('verifyBtn');
+    if (btn.dataset.submitting === '1') return;
+    btn.dataset.submitting = '1';
     btn.disabled = true;
     btn.classList.add('loading');
-    btn.innerHTML = '<span class="loading-spinner"></span> Memverifikasi...';
-    
+    btn.innerHTML = '<span class="loading-spinner"></span> Menyimpan pembayaran...';
+
     try {
-        // Simpan order ke Firebase
-        const orderRef = await firebase.firestore().collection('orders').add({
+        // Simpan order + token dalam SATU transaksi database. Lebih cepat dan mencegah order setengah tersimpan.
+        const orderRef = db.collection('orders').doc();
+        const tokenRef = db.collection('access_tokens').doc();
+        const accessToken = 'acc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+        const now = firebase.firestore.FieldValue.serverTimestamp();
+        const batch = db.batch();
+
+        batch.set(orderRef, {
             productId: paymentData.productId,
             productName: paymentData.productName,
             price: paymentData.price,
@@ -328,14 +335,10 @@ async function verifyPayment() {
             poinReward: paymentData.poin || 0,
             status: 'success',
             paymentProof: uploadedImageBase64,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: now
         });
-        
-        // ✅ Generate token unik untuk akses halaman status
-        const accessToken = 'acc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-        
-        // ✅ Simpan token ke Firebase (untuk validasi)
-        await firebase.firestore().collection('access_tokens').add({
+
+        batch.set(tokenRef, {
             token: accessToken,
             orderId: orderRef.id,
             productName: paymentData.productName,
@@ -344,26 +347,26 @@ async function verifyPayment() {
             customerEmail: paymentData.customerEmail || '',
             poinReward: paymentData.poin || 0,
             status: 'unused',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: now,
             expiresAt: new Date(Date.now() + 3600000).toISOString()
         });
-        
+
+        await batch.commit();
+
         clearInterval(countdownInterval);
-        showToast('✅ Verifikasi berhasil! Mengalihkan...', 'success');
-        
-        // ✅ PERBAIKAN: Gunakan getRedirectUrl() BUKAN hardcode
-        const redirectUrl = await getRedirectUrl(paymentData.productName) + '&token=' + accessToken;
-        
-        setTimeout(function() {
-            window.location.href = redirectUrl;
-        }, 3000);
-        
+        showToast('✅ Pembayaran tersimpan. Mengalihkan...', 'success');
+        const redirectUrl = await getRedirectUrl(paymentData.productName) + '&token=' + encodeURIComponent(accessToken);
+        setTimeout(function() { window.location.href = redirectUrl; }, 900);
     } catch(e) {
-        console.error(e);
-        showToast('❌ Gagal: ' + e.message, 'error');
+        console.error('Payment error:', e);
+        let msg = e && e.message ? e.message : 'Terjadi kesalahan saat menyimpan pembayaran.';
+        if (e && e.status === 413) msg = 'Foto bukti pembayaran terlalu besar. Pilih foto yang lebih kecil.';
+        if (e && e.code === 'REQUEST_TIMEOUT') msg = 'Server pembayaran sedang lambat. Coba tekan verifikasi lagi.';
+        showToast('❌ ' + msg, 'error');
         btn.disabled = false;
         btn.classList.remove('loading');
         btn.innerHTML = '🔒 Verifikasi Pembayaran';
+        btn.dataset.submitting = '0';
     }
 }
 

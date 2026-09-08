@@ -126,12 +126,12 @@ a { color:inherit; text-decoration:none; }
 }
 </style>
 <script>
-(function() {
-    var MUJA_BUILD = '20260527-legal-pages-v1'; window.MUJA_BUILD = MUJA_BUILD;
-    if ('caches' in window) { caches.keys().then(function(keys) { return Promise.all(keys.map(function(key) { return caches.delete(key); })); }).catch(function(){}); }
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(regs) { regs.forEach(function(reg) { if (reg.active) { try { reg.active.postMessage({ type:'MUJA_CLEAR_CACHE', build:MUJA_BUILD }); } catch(e) {} } }); }).catch(function(){}); }
-})();
-</script>
+    // Cache tidak lagi dihapus pada setiap halaman. Static assets boleh memakai cache browser/SW.
+    (function() {
+        var MUJA_BUILD = '20260908-performance-payment-v1';
+        window.MUJA_BUILD = MUJA_BUILD;
+    })();
+    </script>
 <script src="/theme.js?v=20260603-theme-chat-global-v3" defer></script>
 
     <!-- MUJA PRIME Professional Responsive Upgrade -->

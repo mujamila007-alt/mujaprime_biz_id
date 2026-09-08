@@ -16,27 +16,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
+    // Cache tidak lagi dihapus pada setiap halaman. Static assets boleh memakai cache browser/SW.
     (function() {
-        var MUJA_BUILD = '20260603-theme-persist-v4';
+        var MUJA_BUILD = '20260908-performance-payment-v1';
         window.MUJA_BUILD = MUJA_BUILD;
-
-        // Bersihkan Cache Storage lama tanpa memaksa halaman reload.
-        if ('caches' in window) {
-            caches.keys().then(function(keys) {
-                return Promise.all(keys.map(function(key) { return caches.delete(key); }));
-            }).catch(function(){});
-        }
-
-        // Kirim pesan clear cache ke service worker lama, tanpa memaksa reload halaman.
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                registrations.forEach(function(reg) {
-                    if (reg.active) {
-                        try { reg.active.postMessage({ type: 'MUJA_CLEAR_CACHE', build: MUJA_BUILD }); } catch(e) {}
-                    }
-                });
-            }).catch(function(){});
-        }
     })();
     </script>
 
@@ -51,7 +34,7 @@
     <link rel="apple-touch-icon" href="/muja.png?v=20260603-theme-persist-v4">
     <meta name="theme-color" content="#0a0a0f">
     <meta name="application-name" content="Mujahid">
-        <script src="/firebase-config.js?v=20260603-theme-persist-v4"></script>
+        <script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
     <script src="/theme.js?v=20260603-theme-persist-v4" defer></script>
     <script>
         // Simpan versi build tanpa memaksa refresh halaman.
@@ -1008,35 +991,8 @@
     
     <div class="muja-activity-tracker" id="mujaTracker"></div>
     <script>
-        
-        // ========== CACHE FIX AMAN SETIAP BUKA INDEX ==========
-(function() {
-    // Hapus Cache Storage/service worker saja. JANGAN hapus localStorage,
-    // karena warna tema, bahasa, profil, keranjang, login, dan riwayat tersimpan di sana.
-    if ('caches' in window) {
-        caches.keys().then(function(names) {
-            names.forEach(function(name) { caches.delete(name); });
-        }).catch(function(){});
-    }
+        // Cache statis dan session data dipertahankan agar navigasi dan katalog lebih cepat.
 
-    // Hapus sessionStorage saja supaya dialog sementara tidak nyangkut.
-    // localStorage tetap aman agar tema warna tidak kembali ke default saat ke halaman utama.
-    try { sessionStorage.clear(); } catch(e) {}
-
-    // Paksa terapkan ulang tema warna setelah cache/session dibersihkan.
-    try {
-        var accent = localStorage.getItem('muja_account_color_theme') ||
-                     localStorage.getItem('muja_accent_color') ||
-                     localStorage.getItem('muja_color_theme') || 'orange';
-        localStorage.setItem('muja_account_color_theme', accent);
-        localStorage.setItem('muja_accent_color', accent);
-        localStorage.setItem('muja_color_theme', accent);
-        if (window.MujaApplyAccentColor) window.MujaApplyAccentColor(accent);
-        document.documentElement.setAttribute('data-muja-accent-pending', accent);
-    } catch(e) {}
-
-    console.log('✅ Cache browser dibersihkan tanpa menghapus tema warna/user setting');
-})();
 (function(){"use strict";
 
 if(window.initMujaFirebase)window.initMujaFirebase();

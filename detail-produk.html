@@ -10,27 +10,10 @@
 <link rel="stylesheet" href="/theme.css?v=20260603-theme-chat-global-v3">
 <script src="/theme.js?v=20260603-theme-chat-global-v3"></script>
     <script>
+    // Cache tidak lagi dihapus pada setiap halaman. Static assets boleh memakai cache browser/SW.
     (function() {
-        var MUJA_BUILD = '20260603-theme-chat-global-v3';
+        var MUJA_BUILD = '20260908-performance-payment-v1';
         window.MUJA_BUILD = MUJA_BUILD;
-
-        // Bersihkan Cache Storage lama tanpa memaksa reload halaman.
-        if ('caches' in window) {
-            caches.keys().then(function(keys) {
-                return Promise.all(keys.map(function(key) { return caches.delete(key); }));
-            }).catch(function(){});
-        }
-
-        // Kirim pesan clear cache ke service worker lama, tanpa auto reload.
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                registrations.forEach(function(reg) {
-                    if (reg.active) {
-                        try { reg.active.postMessage({ type: 'MUJA_CLEAR_CACHE', build: MUJA_BUILD }); } catch(e) {}
-                    }
-                });
-            }).catch(function(){});
-        }
     })();
     </script>
 
@@ -789,7 +772,7 @@ body.light-mode::before {
     </div>
 </nav>
 
-<script src="/firebase-config.js?v=20260603-theme-chat-global-v3"></script>
+<script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
 <script src="/theme.js?v=20260603-theme-chat-global-v3"></script>
 <script>
 const PRODUCT_ID = new URLSearchParams(window.location.search).get('id') || '';
@@ -902,8 +885,9 @@ async function processPayment() {
     sessionStorage.setItem('payment_customer_wa',   waFormatted);
     sessionStorage.setItem('payment_customer_email', email);
     sessionStorage.setItem('payment_poin',          currentProduct.poinReward || 0);
+    sessionStorage.setItem('payment_redirect_page', currentProduct.redirectPage || 'status-aktif');
 
-    window.location.href = '/payment';
+    window.location.href = '/payment/';
 }
 
 async function getUserCurrentPoin(wa) {
@@ -931,13 +915,12 @@ async function loadProductDetail() {
         return;
     }
     try {
-       // Coba cari di products dulu
-let docSnap = await db.collection('products').doc(PRODUCT_ID).get();
-
-// Kalau tidak ada, coba cari di collection_items
-if (!docSnap.exists) {
-    docSnap = await db.collection('collection_items').doc(PRODUCT_ID).get();
-}
+       // Cari di products dan collection_items secara paralel agar detail terbuka lebih cepat.
+const [productSnap, collectionItemSnap] = await Promise.all([
+    db.collection('products').doc(PRODUCT_ID).get(),
+    db.collection('collection_items').doc(PRODUCT_ID).get()
+]);
+let docSnap = productSnap.exists ? productSnap : collectionItemSnap;
 
 if (!docSnap.exists) {
     document.getElementById('errorState').style.display = 'block';
