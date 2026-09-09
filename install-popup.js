@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var APK_PATH = 'https://github.com/mujahiid007-mujaprime/apk-mujaprime/blob/main/MujaPrime_.apk?raw=true';
+  var APK_PATH = 'https://github.com/mujamila007-alt/mujaprime_biz_id/blob/main/update-and-apk/Muja%20Prime_2.2-Edition.apk?raw=true';
   var POPUP_ID = 'muja-install-popup';
   var SLOT_ID = 'muja-install-slot';
   var deferredInstallPrompt = null;
