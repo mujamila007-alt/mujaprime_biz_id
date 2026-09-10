@@ -1,4 +1,4 @@
-/* MujaPrime install mini banner v2
+/* MujaPrime smart install mini banner v3
    Floating-looking banner that stays out of product/content space. */
 :root {
   --muja-install-accent: #ff7a32;
@@ -215,4 +215,53 @@ body.light-mode .muja-install-close:hover { background: rgba(0,0,0,.09); color: 
   #muja-install-popup,
   .muja-install-btn,
   .muja-install-close { transition: none !important; }
+}
+
+
+/* v3: platform-aware label */
+.muja-install-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.muja-install-heading .muja-install-title {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.muja-install-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.70);
+  font-size: 7.5px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .65px;
+}
+
+body.light-mode .muja-install-badge {
+  border-color: rgba(0,0,0,.08);
+  background: rgba(0,0,0,.045);
+  color: rgba(25,25,35,.58);
+}
+
+#muja-install-popup.muja-install-android .muja-install-card::after {
+  background: linear-gradient(180deg, #35d07f, #83e5ad);
+}
+
+#muja-install-popup.muja-install-windows .muja-install-card::after,
+#muja-install-popup.muja-install-desktop .muja-install-card::after {
+  background: linear-gradient(180deg, #69a7ff, #8bd3ff);
+}
+
+@media (max-width: 520px) {
+  .muja-install-badge { display: none; }
 }
