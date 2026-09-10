@@ -113,7 +113,7 @@ body{min-width:0;}
   display:flex !important;
   gap:8px !important;
   align-items:center !important;
-  flex-wrap:wrap !important;
+  flex-wrap:nowrap !important;
 }
 .search-box input{
   width:min(260px,100%) !important;
