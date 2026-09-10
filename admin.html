@@ -307,6 +307,7 @@ th {
     <link rel="stylesheet" href="/professional.css?v=20260907-pro-v3-adminfix">
     <link rel="stylesheet" href="/admin-professional.css?v=20260910-product-table-v2">
     <script src="/professional-ui.js?v=20260907-pro-v3-adminfix" defer></script>
+    <!-- FIX 2026-09-10: AI chat actions + Dialog APK removed -->
 </head>
 
 <body>
@@ -338,7 +339,6 @@ th {
             <button class="tab" onclick="switchTab('collectionItems')">📁 Item Koleksi</button>
             <button class="tab" onclick="switchTab('orders')">📋 Pesanan</button>
             <button class="tab" onclick="switchTab('userPoinLogs')">⭐ Log Poin</button>
-            <button class="tab" onclick="switchTab('appDialogs')">📢 Dialog APK</button>
             <button class="tab" onclick="switchTab('appInstalls')">📱 Install APK</button>
             <button class="tab" onclick="switchTab('aiChats')">💬 Chat AI</button>
         </div>
@@ -377,129 +377,6 @@ th {
                 </div>
                 <div id="dashboardHealthList" class="health-list">
                     <div class="health-item"><div><strong>Memuat audit...</strong><span>Sistem sedang membaca data Firebase.</span></div><b class="health-badge health-warn">LOAD</b></div>
-                </div>
-            </div>
-        </div>
-
-
-
-        <!-- APP DIALOG SETTINGS TAB -->
-        <div id="appDialogsTab" class="section-container" style="display:none;">
-            <div class="section-header">
-                <h2>📢 Pengaturan Dialog Aplikasi Android</h2>
-                <button class="btn btn-secondary" onclick="loadAppDialogs()">🔄 Refresh</button>
-            </div>
-            <p style="color:var(--text-secondary);margin-bottom:16px;">Atur dialog promo dan update aplikasi. Jika aktif, dialog akan muncul di halaman utama APK Muja Prime.</p>
-            <div class="form-row">
-                <div class="section-container" style="padding:18px;background:var(--surface-2);box-shadow:none;">
-                    <h3 style="margin-bottom:14px;color:var(--gold-400);">🎁 Dialog Promo</h3>
-                    <div class="form-group"><label>Status</label><select id="promoEnabled"><option value="false">Nonaktif</option><option value="true">Aktif</option></select></div>
-                    <div class="form-group"><label>Judul</label><input type="text" id="promoTitle" placeholder="Promo Spesial Muja Prime"></div>
-                    <div class="form-group"><label>Isi Pesan</label><textarea id="promoMessage" rows="4" placeholder="Tulis informasi promo..."></textarea></div>
-                    <div class="form-group">
-                        <label>Gambar Promo</label>
-                        <input type="hidden" id="promoCurrentImageMethod" value="url">
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button type="button" class="btn btn-secondary" onclick="toggleAppDialogImageMethod('promo','url')" id="promoBtnMethodUrl" style="flex:1;">🔗 Link Gambar</button>
-                            <button type="button" class="btn btn-secondary" onclick="toggleAppDialogImageMethod('promo','upload')" id="promoBtnMethodUpload" style="flex:1;">📁 Upload File</button>
-                        </div>
-                        <div id="promoImageMethodUrl"><input type="text" id="promoImageUrl" placeholder="https://..."></div>
-                        <div id="promoImageMethodUpload" style="display:none;">
-                            <input type="file" id="promoImageFile" accept="image/*" onchange="previewAppDialogImage('promo', event)">
-                            <div id="promoImagePreviewContainer" style="margin-top:10px; display:none;">
-                                <img id="promoImagePreview" style="width:120px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--border-subtle);">
-                                <button type="button" class="btn-sm btn-sm-danger" onclick="clearAppDialogImage('promo')">🗑️ Hapus</button>
-                            </div>
-                            <p style="font-size:10px;color:var(--text-muted);margin-top:6px;">📌 File akan dikompres otomatis dan disimpan sebagai base64 Firestore.</p>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Teks Tombol</label><input type="text" id="promoButtonText" placeholder="Lihat Promo"></div>
-                        <div class="form-group"><label>URL Tombol</label><input type="text" id="promoButtonUrl" placeholder="https://..."></div>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveAppDialog('promo')">💾 Simpan Promo</button>
-                </div>
-                <div class="section-container" style="padding:18px;background:var(--surface-2);box-shadow:none;">
-                    <h3 style="margin-bottom:14px;color:var(--gold-400);">🚀 Dialog Update Aplikasi</h3>
-                    <div class="form-group"><label>Status</label><select id="updateEnabled"><option value="false">Nonaktif</option><option value="true">Aktif</option></select></div>
-                    <div class="form-group"><label>Judul</label><input type="text" id="updateTitle" placeholder="Update Aplikasi Tersedia"></div>
-                    <div class="form-group"><label>Isi Pesan</label><textarea id="updateMessage" rows="4" placeholder="Tulis informasi update..."></textarea></div>
-                    <div class="form-group">
-                        <label>Gambar Update</label>
-                        <input type="hidden" id="updateCurrentImageMethod" value="url">
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button type="button" class="btn btn-secondary" onclick="toggleAppDialogImageMethod('update','url')" id="updateBtnMethodUrl" style="flex:1;">🔗 Link Gambar</button>
-                            <button type="button" class="btn btn-secondary" onclick="toggleAppDialogImageMethod('update','upload')" id="updateBtnMethodUpload" style="flex:1;">📁 Upload File</button>
-                        </div>
-                        <div id="updateImageMethodUrl"><input type="text" id="updateImageUrl" placeholder="https://..."></div>
-                        <div id="updateImageMethodUpload" style="display:none;">
-                            <input type="file" id="updateImageFile" accept="image/*" onchange="previewAppDialogImage('update', event)">
-                            <div id="updateImagePreviewContainer" style="margin-top:10px; display:none;">
-                                <img id="updateImagePreview" style="width:120px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--border-subtle);">
-                                <button type="button" class="btn-sm btn-sm-danger" onclick="clearAppDialogImage('update')">🗑️ Hapus</button>
-                            </div>
-                            <p style="font-size:10px;color:var(--text-muted);margin-top:6px;">📌 File akan dikompres otomatis dan disimpan sebagai base64 Firestore.</p>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Nama Versi Baru</label>
-                            <input type="text" id="updateVersionName" placeholder="Contoh: 2.7">
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Versi Baru (versionCode)</label>
-                            <input type="number" id="updateVersionCode" min="1" step="1" inputmode="numeric" placeholder="Contoh: 19">
-                            <small style="display:block;color:var(--text-muted);margin-top:6px;line-height:1.45;">Dialog hanya muncul pada APK dengan kode versi lebih kecil. Contoh: admin 19, APK 18 → muncul; admin 18, APK 18 → tidak muncul.</small>
-                        </div>
-                    </div>
-                    <div class="form-group"><label>Wajib Update?</label><select id="updateForceUpdate"><option value="false">Tidak</option><option value="true">Ya, wajib</option></select></div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Teks Tombol</label><input type="text" id="updateButtonText" placeholder="Update Sekarang"></div>
-                        <div class="form-group"><label>URL APK Langsung</label><input type="text" id="updateButtonUrl" placeholder="https://..."></div>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveAppDialog('update')">💾 Simpan Update</button>
-                </div>
-            </div>
-
-            <div class="section-container" style="margin-top:18px;padding:18px;background:var(--surface-2);box-shadow:none;">
-                <div class="section-header" style="margin-bottom:12px;">
-                    <div>
-                        <h3 style="color:var(--gold-400);margin-bottom:5px;">🧭 Dialog “Lihat Alur Singkat” — list-produk-2.html</h3>
-                        <p style="color:var(--text-secondary);font-size:12px;line-height:1.55;">Aktifkan atau nonaktifkan dialog, lalu ubah seluruh isi dan tampilannya memakai kode HTML dan CSS.</p>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Status Dialog</label>
-                    <select id="guideDialogEnabled">
-                        <option value="true">Aktif</option>
-                        <option value="false">Nonaktif</option>
-                    </select>
-                    <small style="display:block;color:var(--text-muted);margin-top:6px;">Saat nonaktif, tombol “Lihat Alur Singkat” dan popup otomatis tidak akan tampil.</small>
-                </div>
-
-                <div class="form-group">
-                    <label>Kode HTML Isi Dialog</label>
-                    <textarea id="guideDialogHtml" rows="17" spellcheck="false" style="font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.5;white-space:pre;overflow:auto;" placeholder="Tulis HTML isi dialog..."></textarea>
-                    <small style="display:block;color:var(--text-muted);margin-top:6px;line-height:1.5;">Gunakan atribut <code>data-guide-link</code> pada tautan panduan dan <code>data-guide-close</code> pada tombol tutup. Kode JavaScript tidak dijalankan.</small>
-                </div>
-
-                <div class="form-group">
-                    <label>Kode CSS Dialog</label>
-                    <textarea id="guideDialogCss" rows="12" spellcheck="false" style="font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.5;white-space:pre;overflow:auto;" placeholder="#guideNoticeModal .guide-modal { ... }"></textarea>
-                    <small style="display:block;color:var(--text-muted);margin-top:6px;">Disarankan selalu memulai selector dengan <code>#guideNoticeModal</code> agar CSS tidak mengubah bagian lain.</small>
-                </div>
-
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-                    <button class="btn btn-primary" type="button" onclick="saveGuideDialogSetting()">💾 Simpan Dialog</button>
-                    <button class="btn btn-secondary" type="button" onclick="previewGuideDialogSetting()">👁️ Pratinjau</button>
-                    <button class="btn btn-secondary" type="button" onclick="resetGuideDialogEditor()">↩️ Isi Default</button>
-                    <button class="btn btn-secondary" type="button" onclick="loadGuideDialogSetting()">🔄 Muat Ulang</button>
-                </div>
-
-                <div id="guideDialogPreviewWrap" style="display:none;border:1px solid var(--border-subtle);border-radius:16px;overflow:hidden;background:#080810;">
-                    <div style="padding:9px 12px;border-bottom:1px solid var(--border-subtle);font-size:11px;color:var(--text-muted);">Pratinjau dialog</div>
-                    <iframe id="guideDialogPreview" title="Pratinjau dialog Lihat Alur Singkat" sandbox="allow-same-origin" style="display:block;width:100%;height:520px;border:0;background:#080810;"></iframe>
                 </div>
             </div>
         </div>
@@ -552,7 +429,7 @@ th {
                 </div>
             </div>
             <p style="color:var(--text-secondary);margin-bottom:16px;">
-                Panel ini membaca log percakapan dari Firestore collection <b>ai_chat_logs</b>, <b>ai_chats</b>, atau <b>chat_logs</b>. Data yang tampil mengikuti data yang disimpan oleh widget AI.
+                Panel ini membaca log percakapan AI dari database melalui backend MujaPrime. Sumber log yang didukung: <b>ai_chat_logs</b>, <b>ai_chats</b>, atau <b>chat_logs</b>.
             </p>
             <div class="stats-grid">
                 <div class="stat-card"><h3>Total Sesi Chat</h3><div class="value" id="totalAiChatSessions">0</div></div>
@@ -1246,7 +1123,7 @@ let currentCollectionImageMethod = 'url';
         document.querySelectorAll('.tab').forEach(function(t) {
             t.classList.toggle('active', t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tab + "'"));
         });
-        ['dashboardTab', 'productsTab', 'registrationsTab', 'manualMembersTab', 'leaderboardTab', 'poinProductsTab', 'poinRedeemsTab', 'sectionsTab', 'ordersTab', 'userPoinLogsTab', 'collectionItemsTab', 'appDialogsTab', 'appInstallsTab', 'aiChatsTab'].forEach(id => {
+        ['dashboardTab', 'productsTab', 'registrationsTab', 'manualMembersTab', 'leaderboardTab', 'poinProductsTab', 'poinRedeemsTab', 'sectionsTab', 'ordersTab', 'userPoinLogsTab', 'collectionItemsTab', 'appInstallsTab', 'aiChatsTab'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
@@ -1261,7 +1138,6 @@ let currentCollectionImageMethod = 'url';
         else if (tab === 'collectionItems') { document.getElementById('collectionItemsTab').style.display = 'block'; loadCollectionGroups(); }
         else if (tab === 'orders') { document.getElementById('ordersTab').style.display = 'block'; loadOrders(); }
         else if (tab === 'userPoinLogs') { document.getElementById('userPoinLogsTab').style.display = 'block'; loadUserPoinLogs(); }
-        else if (tab === 'appDialogs') { document.getElementById('appDialogsTab').style.display = 'block'; loadAppDialogs(); }
         else if (tab === 'appInstalls') { document.getElementById('appInstallsTab').style.display = 'block'; loadAppInstalls(); }
         else if (tab === 'aiChats') { document.getElementById('aiChatsTab').style.display = 'block'; loadAiChats(); }
     }
@@ -1604,211 +1480,6 @@ let currentCollectionImageMethod = 'url';
         const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
         downloadFile(csv, 'member-luar-manual-mujaprime.csv');
     }
-
-    // ========== APP DIALOG SETTINGS UNTUK APK ANDROID ==========
-    let appDialogUploadedImages = { promo: '', update: '' };
-
-    function toggleAppDialogImageMethod(type, method) {
-        const prefix = type === 'promo' ? 'promo' : 'update';
-        document.getElementById(prefix + 'CurrentImageMethod').value = method;
-        document.getElementById(prefix + 'ImageMethodUrl').style.display = method === 'url' ? 'block' : 'none';
-        document.getElementById(prefix + 'ImageMethodUpload').style.display = method === 'upload' ? 'block' : 'none';
-        document.getElementById(prefix + 'BtnMethodUrl').classList.toggle('btn-primary', method === 'url');
-        document.getElementById(prefix + 'BtnMethodUpload').classList.toggle('btn-primary', method === 'upload');
-        if (method === 'url') appDialogUploadedImages[type] = '';
-    }
-
-    function previewAppDialogImage(type, event) {
-        const file = event.target.files && event.target.files[0];
-        if (!file) return;
-        if (!file.type.startsWith('image/')) { showToast('❌ File harus berupa gambar', 'error'); return; }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const max = 900;
-                let w = img.width, h = img.height;
-                if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
-                else if (h > max) { w = Math.round(w * max / h); h = max; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-                appDialogUploadedImages[type] = dataUrl;
-                const prefix = type === 'promo' ? 'promo' : 'update';
-                document.getElementById(prefix + 'ImagePreview').src = dataUrl;
-                document.getElementById(prefix + 'ImagePreviewContainer').style.display = 'block';
-                showToast('✅ Gambar siap disimpan', 'success');
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function clearAppDialogImage(type) {
-        const prefix = type === 'promo' ? 'promo' : 'update';
-        appDialogUploadedImages[type] = '';
-        const file = document.getElementById(prefix + 'ImageFile');
-        if (file) file.value = '';
-        document.getElementById(prefix + 'ImagePreview').src = '';
-        document.getElementById(prefix + 'ImagePreviewContainer').style.display = 'none';
-    }
-
-    async function loadAppDialogs() {
-        await Promise.all([loadOneAppDialog('promo'), loadOneAppDialog('update'), loadGuideDialogSetting()]);
-    }
-
-    async function loadOneAppDialog(type) {
-        const docId = type === 'promo' ? 'promo_dialog' : 'update_dialog';
-        try {
-            const snap = await db.collection('settings').doc(docId).get();
-            const d = snap.exists ? snap.data() : {};
-            const prefix = type === 'promo' ? 'promo' : 'update';
-            document.getElementById(prefix + 'Enabled').value = String(!!d.enabled);
-            document.getElementById(prefix + 'Title').value = d.title || (type === 'promo' ? 'Promo Muja Prime' : 'Update Aplikasi Tersedia');
-            document.getElementById(prefix + 'Message').value = d.message || '';
-            document.getElementById(prefix + 'ImageUrl').value = d.imageUrl && !String(d.imageUrl).startsWith('data:image') ? d.imageUrl : '';
-            if (d.imageUrl && String(d.imageUrl).startsWith('data:image')) {
-                appDialogUploadedImages[type] = d.imageUrl;
-                toggleAppDialogImageMethod(type, 'upload');
-                document.getElementById(prefix + 'ImagePreview').src = d.imageUrl;
-                document.getElementById(prefix + 'ImagePreviewContainer').style.display = 'block';
-            } else {
-                appDialogUploadedImages[type] = '';
-                toggleAppDialogImageMethod(type, 'url');
-            }
-            document.getElementById(prefix + 'ButtonText').value = d.buttonText || (type === 'promo' ? 'Lihat Promo' : 'Update Sekarang');
-            document.getElementById(prefix + 'ButtonUrl').value = d.buttonUrl || '';
-            if (type === 'update') {
-                document.getElementById('updateVersionName').value = d.versionName || '';
-                const savedVersionCode = Number(d.versionCode || d.targetVersionCode || 0);
-                document.getElementById('updateVersionCode').value = savedVersionCode > 0 ? String(Math.trunc(savedVersionCode)) : '';
-                document.getElementById('updateForceUpdate').value = String(!!d.forceUpdate);
-            }
-        } catch (e) {
-            console.error(e);
-            showToast('❌ Gagal memuat dialog ' + type, 'error');
-        }
-    }
-
-    async function saveAppDialog(type) {
-        const isPromo = type === 'promo';
-        const prefix = isPromo ? 'promo' : 'update';
-        const docId = isPromo ? 'promo_dialog' : 'update_dialog';
-        const payload = {
-            type: type,
-            enabled: document.getElementById(prefix + 'Enabled').value === 'true',
-            title: document.getElementById(prefix + 'Title').value.trim(),
-            message: document.getElementById(prefix + 'Message').value.trim(),
-            imageUrl: appDialogUploadedImages[type] || document.getElementById(prefix + 'ImageUrl').value.trim(),
-            buttonText: document.getElementById(prefix + 'ButtonText').value.trim(),
-            buttonUrl: document.getElementById(prefix + 'ButtonUrl').value.trim(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            source: 'admin-panel'
-        };
-        if (!isPromo) {
-            const versionCodeRaw = document.getElementById('updateVersionCode').value.trim();
-            const versionCode = Number.parseInt(versionCodeRaw, 10);
-            if (payload.enabled && (!Number.isInteger(versionCode) || versionCode < 1)) {
-                showToast('❌ Isi Kode Versi Baru dengan angka, misalnya 19', 'error');
-                document.getElementById('updateVersionCode').focus();
-                return;
-            }
-            payload.versionName = document.getElementById('updateVersionName').value.trim();
-            payload.versionCode = Number.isInteger(versionCode) && versionCode > 0 ? versionCode : 0;
-            payload.forceUpdate = document.getElementById('updateForceUpdate').value === 'true';
-        }
-        try {
-            await db.collection('settings').doc(docId).set(payload, { merge: true });
-            showToast('✅ Dialog ' + (isPromo ? 'promo' : 'update') + ' berhasil disimpan', 'success');
-        } catch (e) {
-            console.error(e);
-            showToast('❌ Gagal menyimpan dialog', 'error');
-        }
-    }
-
-
-    // ========== DIALOG LIHAT ALUR SINGKAT - LIST PRODUK 2 ==========
-    const DEFAULT_GUIDE_DIALOG_HTML = "<div class=\"guide-modal-mark\">\n    <svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/><path d=\"m9 12 2 2 4-5\"/></svg>\n</div>\n<h2>Lihat panduan sebelum membeli produk ini</h2>\n<p>Koleksi ini dibuat untuk produk yang butuh pemahaman alur kerja. Jangan langsung membeli sebelum membaca panduan agar tidak salah langkah.</p>\n<div class=\"guide-points\">\n    <div class=\"guide-point\"><span>✓</span><span>Pahami apa yang akan dibantu admin dan apa yang perlu disiapkan oleh pengguna.</span></div>\n    <div class=\"guide-point\"><span>✓</span><span>Periksa batasan layanan, package name yang didukung, dan garansi sebelum checkout.</span></div>\n    <div class=\"guide-point\"><span>✓</span><span>Jika gagal atau memang tidak bisa backup/restore, uang kembali 100%.</span></div>\n    <div class=\"guide-point\"><span>✓</span><span>Ada garansi per bulan sesuai paket yang diambil.</span></div>\n</div>\n<div class=\"guide-modal-actions\">\n    <a class=\"btn-guide-primary\" href=\"#\" data-guide-link>Lihat Panduan Sekarang</a>\n    <button class=\"btn-guide-secondary\" type=\"button\" data-guide-close>Saya Mengerti</button>\n</div>";
-    const DEFAULT_GUIDE_DIALOG_CSS = "/* CSS ini hanya contoh. Gunakan #guideNoticeModal agar tidak memengaruhi halaman lain. */\n#guideNoticeModal .guide-modal {\n    border-radius: 28px;\n}\n#guideNoticeModal .guide-modal h2 {\n    color: #ffffff;\n}";
-
-    async function loadGuideDialogSetting() {
-        try {
-            const snap = await db.collection('settings').doc('list_produk_2_guide_dialog').get();
-            const d = snap.exists ? snap.data() : {};
-            const enabledEl = document.getElementById('guideDialogEnabled');
-            const htmlEl = document.getElementById('guideDialogHtml');
-            const cssEl = document.getElementById('guideDialogCss');
-            if (enabledEl) enabledEl.value = String(d.enabled !== false);
-            if (htmlEl) htmlEl.value = (typeof d.html === 'string' && d.html.trim()) ? d.html : DEFAULT_GUIDE_DIALOG_HTML;
-            if (cssEl) cssEl.value = (typeof d.css === 'string') ? d.css : DEFAULT_GUIDE_DIALOG_CSS;
-        } catch (e) {
-            console.error(e);
-            showToast('❌ Gagal memuat pengaturan dialog alur singkat', 'error');
-        }
-    }
-
-    async function saveGuideDialogSetting() {
-        const enabledEl = document.getElementById('guideDialogEnabled');
-        const htmlEl = document.getElementById('guideDialogHtml');
-        const cssEl = document.getElementById('guideDialogCss');
-        if (!enabledEl || !htmlEl || !cssEl) return;
-
-        const html = htmlEl.value.trim();
-        const css = cssEl.value.trim();
-        if (enabledEl.value === 'true' && !html) {
-            showToast('❌ Kode HTML dialog tidak boleh kosong saat status aktif', 'error');
-            return;
-        }
-
-        try {
-            await db.collection('settings').doc('list_produk_2_guide_dialog').set({
-                enabled: enabledEl.value === 'true',
-                html: html,
-                css: css,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                source: 'admin-panel'
-            }, { merge: true });
-            showToast('✅ Dialog Lihat Alur Singkat berhasil disimpan', 'success');
-        } catch (e) {
-            console.error(e);
-            showToast('❌ Gagal menyimpan dialog alur singkat: ' + (e.message || e), 'error');
-        }
-    }
-
-    function resetGuideDialogEditor() {
-        const enabledEl = document.getElementById('guideDialogEnabled');
-        const htmlEl = document.getElementById('guideDialogHtml');
-        const cssEl = document.getElementById('guideDialogCss');
-        if (enabledEl) enabledEl.value = 'true';
-        if (htmlEl) htmlEl.value = DEFAULT_GUIDE_DIALOG_HTML;
-        if (cssEl) cssEl.value = DEFAULT_GUIDE_DIALOG_CSS;
-        previewGuideDialogSetting();
-        showToast('✅ Isi default dimuat. Tekan Simpan Dialog untuk menerapkannya.', 'success');
-    }
-
-    function previewGuideDialogSetting() {
-        const htmlEl = document.getElementById('guideDialogHtml');
-        const cssEl = document.getElementById('guideDialogCss');
-        const wrap = document.getElementById('guideDialogPreviewWrap');
-        const frame = document.getElementById('guideDialogPreview');
-        if (!htmlEl || !cssEl || !wrap || !frame) return;
-
-        const previewBaseCss = `
-            *{box-sizing:border-box} body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.78);font-family:Arial,sans-serif;color:#fff}
-            .guide-modal{width:min(520px,100%);border-radius:28px;padding:22px;background:linear-gradient(160deg,#151522,#080810);border:1px solid rgba(247,212,106,.22);box-shadow:0 30px 90px rgba(0,0,0,.58);position:relative;overflow:hidden}
-            .guide-modal-mark{width:58px;height:58px;border-radius:20px;display:flex;align-items:center;justify-content:center;color:#120b04;background:linear-gradient(135deg,#ff6b2b,#f5c528);margin-bottom:14px}
-            h2{font-size:20px;line-height:1.25;margin:0 0 8px;color:#fff} p{font-size:13px;color:#d8d8e5;line-height:1.65;margin:0 0 14px}
-            .guide-points{display:grid;gap:9px;margin:14px 0 18px} .guide-point{display:flex;gap:9px;align-items:flex-start;padding:10px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);color:#d8d8e5;font-size:12px;line-height:1.45}
-            .guide-modal-actions{display:flex;flex-wrap:wrap;gap:10px} .btn-guide-primary,.btn-guide-secondary{border:0;text-decoration:none;cursor:pointer;border-radius:999px;padding:9px 13px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
-            .btn-guide-primary{color:#120b04;background:linear-gradient(135deg,#f5c528,#ff7e3f)} .btn-guide-secondary{color:#eee;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
-        `;
-        const safeHtml = String(htmlEl.value || '').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-        frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + previewBaseCss + '\n' + cssEl.value + '</style></head><body><div id="guideNoticeModal"><div class="guide-modal">' + safeHtml + '</div></div></body></html>';
-        wrap.style.display = 'block';
-        setTimeout(function() { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 80);
-    }
-
 
     // ========== DASHBOARD ADMIN & AUDIT ==========
     function setDashText(id, value) {
@@ -3016,7 +2687,7 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
         loaded.forEach(function(item){ unique[item.source + '/' + item.id] = item; });
         allAiChats = Object.values(unique).sort(function(a,b){ return (b.timeMs || 0) - (a.timeMs || 0); });
         renderAiChats();
-        if (!allAiChats.length && errors.length) showToast('⚠️ Log AI belum bisa dibaca. Cek rules Firestore.', 'error');
+        if (!allAiChats.length && errors.length) showToast('⚠️ Log AI belum bisa dibaca. Cek koneksi database/API.', 'error');
     }
 
     function updateAiChatStats(list) {
@@ -3055,7 +2726,7 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
         }
         updateAiChatStats(list);
         if (!list.length) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:34px;color:var(--text-secondary);">📭 Belum ada log chat AI. Jika widget AI belum menyimpan percakapan ke Firestore, tabel ini memang masih kosong.</td></tr>';
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:34px;color:var(--text-secondary);">📭 Belum ada log chat AI. Log akan muncul setelah widget AI menyimpan percakapan.</td></tr>';
             return;
         }
         body.innerHTML = list.map(function(item) {
@@ -3069,9 +2740,30 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
                 '<td style="max-width:190px;white-space:normal;word-break:break-word;">' + escapeHtml(aiSnippet(item.pageUrl, 90)) + '</td>' +
                 '<td style="max-width:260px;white-space:normal;word-break:break-word;">' + escapeHtml(aiSnippet(item.firstUser, 160)) + '</td>' +
                 '<td style="max-width:260px;white-space:normal;word-break:break-word;">' + escapeHtml(aiSnippet(item.lastAi, 160)) + '</td>' +
-                '<td><button class="btn-sm" onclick="openAiChatDetail(' + JSON.stringify(item.source) + ',' + JSON.stringify(item.id) + ')">👁 Detail</button> <button class="btn-sm btn-sm-danger" onclick="deleteAiChat(' + JSON.stringify(item.source) + ',' + JSON.stringify(item.id) + ')">🗑</button></td>' +
+                '<td style="white-space:nowrap;">' +
+                    '<button type="button" class="btn-sm ai-chat-action" data-ai-action="detail" data-source="' + encodeURIComponent(item.source) + '" data-id="' + encodeURIComponent(item.id) + '">👁 Detail</button> ' +
+                    '<button type="button" class="btn-sm btn-sm-danger ai-chat-action" data-ai-action="delete" data-source="' + encodeURIComponent(item.source) + '" data-id="' + encodeURIComponent(item.id) + '">🗑 Hapus</button>' +
+                '</td>' +
                 '</tr>';
         }).join('');
+        bindAiChatActions(body);
+    }
+
+    function bindAiChatActions(container) {
+        if (!container) return;
+        container.querySelectorAll('.ai-chat-action').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const source = decodeURIComponent(btn.dataset.source || '');
+                const id = decodeURIComponent(btn.dataset.id || '');
+                const action = btn.dataset.aiAction;
+                if (!source || !id) {
+                    showToast('❌ ID log chat tidak valid', 'error');
+                    return;
+                }
+                if (action === 'detail') openAiChatDetail(source, id);
+                else if (action === 'delete') deleteAiChat(source, id, btn);
+            });
+        });
     }
 
     function searchAiChats() { renderAiChats(); }
@@ -3080,7 +2772,15 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
     function openAiChatDetail(source, id) {
         const item = (allAiChats || []).find(function(x){ return x.source === source && x.id === id; });
         const body = document.getElementById('aiChatDetailBody');
-        if (!item || !body) return;
+        const modal = document.getElementById('aiChatDetailModal');
+        if (!item) {
+            showToast('❌ Detail percakapan tidak ditemukan. Coba Refresh Chat AI.', 'error');
+            return;
+        }
+        if (!body || !modal) {
+            showToast('❌ Komponen detail chat tidak tersedia', 'error');
+            return;
+        }
         const meta = '<div style="padding:14px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-2);margin-bottom:14px;line-height:1.7;">' +
             '<b>Pengunjung:</b> ' + escapeHtml(item.name || 'Pengunjung') + '<br>' +
             (item.whatsapp ? '<b>WA:</b> ' + escapeHtml(item.whatsapp) + '<br>' : '') +
@@ -3099,7 +2799,7 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
                 '<div style="font-size:11px;opacity:.8;font-weight:800;margin-bottom:5px;">' + escapeHtml(label) + '</div>' + escapeHtml(m.content) + '</div>';
         }).join('') : '<p style="color:var(--text-secondary);">Tidak ada isi percakapan di dokumen ini.</p>';
         body.innerHTML = meta + chats;
-        document.getElementById('aiChatDetailModal').classList.add('active');
+        modal.classList.add('active');
     }
 
     function closeAiChatDetail() {
@@ -3107,15 +2807,32 @@ window.saveManualMember=saveManualMember;window.addManualMemberMonth=addManualMe
         if (modal) modal.classList.remove('active');
     }
 
-    async function deleteAiChat(source, id) {
-        if (!source || !id) return;
-        if (!confirm('Hapus log chat AI ini?')) return;
+    async function deleteAiChat(source, id, button) {
+        if (!source || !id) {
+            showToast('❌ ID log chat tidak valid', 'error');
+            return;
+        }
+        if (!confirm('Hapus log chat AI ini? Data yang dihapus tidak dapat dikembalikan.')) return;
+        const oldText = button ? button.innerHTML : '';
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '⏳ Menghapus...';
+        }
         try {
             await db.collection(source).doc(id).delete();
-            showToast('✅ Log chat dihapus', 'success');
-            loadAiChats();
+            allAiChats = (allAiChats || []).filter(function(item) {
+                return !(item.source === source && item.id === id);
+            });
+            renderAiChats();
+            closeAiChatDetail();
+            showToast('✅ Log chat AI berhasil dihapus', 'success');
         } catch(e) {
-            showToast('❌ Gagal menghapus log chat', 'error');
+            console.error('deleteAiChat:', e);
+            if (button && document.body.contains(button)) {
+                button.disabled = false;
+                button.innerHTML = oldText || '🗑 Hapus';
+            }
+            showToast('❌ Gagal menghapus log chat: ' + (e.message || e), 'error');
         }
     }
 
