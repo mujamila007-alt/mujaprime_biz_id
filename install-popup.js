@@ -86,7 +86,7 @@
         '</div>' +
         '<div class="muja-install-text">' +
           '<strong class="muja-install-title">MujaPrime lebih nyaman di aplikasi</strong>' +
-          '<span class="muja-install-subtitle">Install aplikasi resmi untuk akses lebih cepat</span>' +
+          '<span class="muja-install-subtitle">Install aplikasi Android untuk akses lebih cepat</span>' +
         '</div>' +
         '<button class="muja-install-btn" type="button" aria-label="Install aplikasi MujaPrime">Install</button>' +
         '<button class="muja-install-close" type="button" aria-label="Tutup notifikasi install">&times;</button>' +
