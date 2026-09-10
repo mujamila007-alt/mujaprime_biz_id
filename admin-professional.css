@@ -291,3 +291,81 @@ td .btn,td button{max-width:100%;}
   .quick-actions{grid-template-columns:1fr !important;}
   .section-container{padding:11px !important;}
 }
+
+/* ============================================================
+   MUJAPRIME ADMIN PRODUCT TABLE FIX - 2026-09-10
+   liquid-glass.css has a global .product-row rule that forces
+   display:flex. On the admin product table, .product-row is a <tr>,
+   so it must remain a real table row.
+   ============================================================ */
+#productsTab .table-wrapper tbody tr.product-row {
+  display: table-row !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  align-items: initial !important;
+  justify-content: initial !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+#productsTab .table-wrapper tbody tr.product-row > td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 11px 12px !important;
+  vertical-align: middle !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Keep name readable instead of one character per line. */
+#productsTab .table-wrapper tbody tr.product-row > td:nth-child(3) {
+  min-width: 190px !important;
+  max-width: 300px !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Fixed, predictable utility columns. */
+#productsTab .table-wrapper th:nth-child(1),
+#productsTab .table-wrapper td:nth-child(1) { width: 58px !important; text-align:center !important; }
+#productsTab .table-wrapper th:nth-child(2),
+#productsTab .table-wrapper td:nth-child(2) { width: 76px !important; text-align:center !important; }
+#productsTab .table-wrapper th:nth-child(4),
+#productsTab .table-wrapper td:nth-child(4) { min-width: 105px !important; }
+#productsTab .table-wrapper th:nth-child(5),
+#productsTab .table-wrapper td:nth-child(5) { min-width: 105px !important; white-space:nowrap !important; }
+#productsTab .table-wrapper th:nth-child(6),
+#productsTab .table-wrapper td:nth-child(6),
+#productsTab .table-wrapper th:nth-child(7),
+#productsTab .table-wrapper td:nth-child(7) { min-width: 88px !important; white-space:nowrap !important; }
+#productsTab .table-wrapper th:nth-child(8),
+#productsTab .table-wrapper td:nth-child(8) { min-width: 85px !important; white-space:nowrap !important; }
+#productsTab .table-wrapper th:nth-child(9),
+#productsTab .table-wrapper td:nth-child(9) { min-width: 96px !important; white-space:nowrap !important; }
+
+#productsTab .product-image {
+  display:block !important;
+  width:48px !important;
+  height:48px !important;
+  min-width:48px !important;
+  object-fit:cover !important;
+}
+
+#productsTab .product-row:hover {
+  background: rgba(255,255,255,.04) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
