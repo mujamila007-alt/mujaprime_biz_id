@@ -34,7 +34,7 @@
     <link rel="apple-touch-icon" href="muja.png?v=20260603-theme-persist-v4">
     <meta name="theme-color" content="#0a0a0f">
     <meta name="application-name" content="Mujahid">
-        <script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
+        <script src="/firebase-config.js?v=20260911-performance-v4"></script>
     <script src="/theme.js?v=20260603-theme-persist-v4" defer></script>
     <script>
         // Simpan versi build tanpa memaksa refresh halaman.
@@ -1768,10 +1768,11 @@ function loadTheme() {
 document.addEventListener('DOMContentLoaded', async function() {
     loadTheme();
     
-    // ✅ Refresh data user dari Firestore dulu
-    await refreshUserDataFromFirestore();
-    
+    // Produk adalah konten utama. Jangan menahannya hanya karena sinkronisasi akun lambat.
+    // Katalog dan sinkronisasi akun berjalan paralel agar first paint jauh lebih cepat.
     loadAllProducts();
+    refreshUserDataFromFirestore().catch(function(e){ console.warn('Sinkron akun:', e); });
+    
     checkRegistrationDialog();
     updateCartUI();
     updateCartBadge();

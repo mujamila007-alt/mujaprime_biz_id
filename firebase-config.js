@@ -226,13 +226,14 @@
   class Query {
     constructor(collection, state) {
       this.collectionName = collection;
-      this.state = state || { filters: [], orderBy: null, limit: null };
+      this.state = state || { filters: [], orderBy: null, limit: null, excludeFields: [] };
     }
     _clone() {
       return new Query(this.collectionName, {
         filters: this.state.filters.slice(),
         orderBy: this.state.orderBy ? { ...this.state.orderBy } : null,
-        limit: this.state.limit
+        limit: this.state.limit,
+        excludeFields: (this.state.excludeFields || []).slice()
       });
     }
     where(field, op, value) {
@@ -250,13 +251,19 @@
       q.state.limit = Math.max(1, Number(n) || 1);
       return q;
     }
+    exclude(...fields) {
+      const q = this._clone();
+      q.state.excludeFields = (q.state.excludeFields || []).concat(fields.map(String));
+      return q;
+    }
     async get() {
       const result = await api({
         action: 'query',
         collection: this.collectionName,
         filters: this.state.filters,
         orderBy: this.state.orderBy,
-        limit: this.state.limit
+        limit: this.state.limit,
+        excludeFields: (this.state.excludeFields || []).slice()
       });
       return new QuerySnapshot(this.collectionName, result.docs || []);
     }
@@ -380,6 +387,8 @@
   };
 
   const db = new FirestoreCompat();
+  // Digunakan admin dashboard untuk menggabungkan beberapa read menjadi satu request Vercel.
+  globalThis.mujaDbApi = api;
 
   // Minimal Firebase Auth compatibility for adminuser-aktif page.
   let authUser = null;

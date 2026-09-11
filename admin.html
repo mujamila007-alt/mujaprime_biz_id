@@ -302,7 +302,7 @@ th {
     }
 </style>
 
-    <script src="/firebase-config.js?v=20260908-performance-payment-v1"></script>
+    <script src="/firebase-config.js?v=20260911-performance-v4"></script>
 
     <link rel="stylesheet" href="/professional.css?v=20260907-pro-v3-adminfix">
     <link rel="stylesheet" href="/admin-professional.css?v=20260910-product-table-v2">
@@ -1500,21 +1500,27 @@ let currentCollectionImageMethod = 'url';
     async function loadDashboard() {
         const health = [];
         try {
-            const [productsSnap, regsSnap, ordersSnap, logsSnap, tokensSnap, redeemSnap] = await Promise.all([
-                db.collection('products').get(),
-                db.collection('registrations').get(),
-                db.collection('orders').get(),
-                db.collection('user_poins').get().catch(function(){ return { docs: [] }; }),
-                db.collection('access_tokens').where('status', '==', 'unused').get().catch(function(){ return { docs: [] }; }),
-                db.collection('poin_redeems').get().catch(function(){ return { docs: [] }; })
-            ]);
-
-            const products = productsSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
-            const regs = regsSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
-            const orders = ordersSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
-            const logs = logsSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
-            const tokens = tokensSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
-            const redeems = redeemSnap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
+            // Satu request Vercel untuk seluruh ringkasan. Ini menghindari 6 cold-start/request terpisah.
+            // Field besar (foto profil dan bukti pembayaran base64) tidak ikut dikirim ke dashboard.
+            const multi = await window.mujaDbApi({
+                action: 'multiQuery',
+                queries: [
+                    { collection: 'products' },
+                    { collection: 'registrations', excludeFields: ['photo'] },
+                    { collection: 'orders', excludeFields: ['paymentProof'] },
+                    { collection: 'user_poins' },
+                    { collection: 'access_tokens', filters: [{ field: 'status', op: '==', value: 'unused' }] },
+                    { collection: 'poin_redeems' }
+                ]
+            });
+            const result = multi.results || [];
+            function docsAt(i){ return ((result[i] && result[i].docs) || []).map(function(r){ return { id:r.id, ...(r.data || {}) }; }); }
+            const products = docsAt(0);
+            const regs = docsAt(1);
+            const orders = docsAt(2);
+            const logs = docsAt(3);
+            const tokens = docsAt(4);
+            const redeems = docsAt(5);
 
             const revenue = orders.reduce(function(sum, o){ return sum + Number(o.price || o.total || 0); }, 0);
             const totalPoin = regs.reduce(function(sum, r){ return sum + Number(r.poin || 0); }, 0);
@@ -1563,7 +1569,7 @@ let currentCollectionImageMethod = 'url';
             renderHealth(health);
         } catch(e) {
             console.error('Dashboard error:', e);
-            renderHealth([{ level: 'danger', title: 'Dashboard gagal membaca data', desc: e.message || 'Periksa koneksi Firebase dan rules Firestore.' }]);
+            renderHealth([{ level: 'danger', title: 'Dashboard gagal membaca data', desc: e.message || 'Periksa koneksi Vercel Function dan PostgreSQL Neon.' }]);
         }
     }
 
@@ -2156,12 +2162,12 @@ function dragEnd(e) {
     async function loadOrders(){
         const tb=document.getElementById('ordersTableBody');
         tb.innerHTML='<tr><td colspan="8"><div class="loading-spinner"></div></td></tr>';
-        try{const snap=await db.collection('orders').orderBy('createdAt','desc').get();allOrders=[];
+        try{const snap=await db.collection('orders').exclude('paymentProof').orderBy('createdAt','desc').limit(1000).get();allOrders=[];
         let tr=0;const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const monthStart=new Date(now.getFullYear(),now.getMonth(),1);let tc=0,mc=0;
         snap.forEach(doc=>{const o={id:doc.id,...doc.data()};allOrders.push(o);tr+=o.price||0;if(o.createdAt){const d=o.createdAt.toDate();if(d>=today)tc++;if(d>=monthStart)mc++;}});
         document.getElementById('totalOrders').textContent=allOrders.length;document.getElementById('todayOrders').textContent=tc;
         document.getElementById('monthOrders').textContent=mc;document.getElementById('totalRevenue').textContent=formatRupiah(tr);
-        renderOrdersTable(allOrders);}catch(e){tb.innerHTML='<tr><td colspan="8">❌ Gagal</td></tr>';}
+        renderOrdersTable(allOrders);}catch(e){console.error('Load orders error:',e);tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ember-400);">❌ Gagal memuat pesanan<br><small>'+escapeHtml(e.message||'Periksa koneksi database')+'</small><br><button class="btn btn-secondary" style="margin-top:10px" onclick="loadOrders()">Coba Lagi</button></td></tr>';}
     }
     
     function renderOrdersTable(orders) {
@@ -2184,7 +2190,7 @@ function dragEnd(e) {
             <td>${escapeHtml(o.productName||'-')}</td>
             <td><strong style="color:var(--ember-400);">${formatRupiah(o.price)}</strong></td>
             <td><span style="background:var(--surface-2);padding:3px 8px;border-radius:4px;font-size:11px;">${(o.paymentMethod||'-').toUpperCase()}</span></td>
-            <td>${o.paymentProof ? `<button class="action-btn edit-btn" onclick="previewBukti('${o.id}')">📸 Lihat</button>` : '<span style="color:var(--text-muted);">-</span>'}</td>
+            <td><button class="action-btn edit-btn" onclick="previewBukti('${o.id}')">📸 Lihat</button></td>
             <td>
                 <button class="action-btn delete-btn" data-order-id="${o.id}" data-order-name="${safeName}">🗑️</button>
             </td>
@@ -2201,11 +2207,23 @@ function dragEnd(e) {
     });
 }
     
-    function previewBukti(orderId){
-        const order=allOrders.find(o=>o.id===orderId);
-        if(!order||!order.paymentProof){showToast('❌ Bukti tidak ditemukan!','error');return;}
-        document.getElementById('previewBuktiImg').src=order.paymentProof;document.getElementById('downloadBuktiLink').href=order.paymentProof;
+    async function previewBukti(orderId){
+        const img=document.getElementById('previewBuktiImg');
+        const link=document.getElementById('downloadBuktiLink');
         document.getElementById('previewBuktiModal').classList.add('active');
+        if(img){ img.removeAttribute('src'); img.alt='Memuat bukti pembayaran...'; }
+        if(link) link.style.display='none';
+        try {
+            // Bukti pembayaran base64 cukup besar. Ambil hanya saat admin benar-benar menekan Lihat.
+            const snap=await db.collection('orders').doc(orderId).get();
+            const order=snap.exists?snap.data():null;
+            if(!order||!order.paymentProof) throw new Error('Bukti pembayaran tidak ditemukan.');
+            if(img){ img.src=order.paymentProof; img.alt='Bukti pembayaran'; }
+            if(link){ link.href=order.paymentProof; link.style.display='inline-flex'; }
+        } catch(e) {
+            closePreviewBukti();
+            showToast('❌ '+(e.message||'Gagal memuat bukti pembayaran'),'error');
+        }
     }
     function closePreviewBukti(){document.getElementById('previewBuktiModal').classList.remove('active');}
     

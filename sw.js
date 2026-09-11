@@ -1,6 +1,6 @@
 // MujaPrime service worker - performance safe mode
-// Build: 20260910-device-install-v3
-const MUJA_BUILD_VERSION = '20260910-device-install-v3';
+// Build: 20260911-performance-v4
+const MUJA_BUILD_VERSION = '20260911-performance-v4';
 const STATIC_CACHE = 'muja-static-' + MUJA_BUILD_VERSION;
 const PAGE_CACHE = 'muja-pages-' + MUJA_BUILD_VERSION;
 const CACHE_PREFIX = 'muja-';

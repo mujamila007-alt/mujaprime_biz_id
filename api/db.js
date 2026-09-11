@@ -173,9 +173,19 @@ async function readRow(executor, collection, id, lock = false) {
   return rows[0] || null;
 }
 
-function buildFilteredQuery(collection, filters) {
+function buildFilteredQuery(collection, filters, excludeFields = []) {
   const params = [collection];
-  let sql = 'SELECT document_id AS id, data, version FROM muja_documents WHERE collection_name=$1';
+  const safeExclude = Array.isArray(excludeFields)
+    ? excludeFields.map(String).filter(f => /^[A-Za-z0-9_]{1,80}$/.test(f)).slice(0, 20)
+    : [];
+
+  let dataExpr = 'data';
+  if (safeExclude.length) {
+    params.push(safeExclude);
+    dataExpr = `data - $${params.length}::text[]`;
+  }
+
+  let sql = `SELECT document_id AS id, ${dataExpr} AS data, version FROM muja_documents WHERE collection_name=$1`;
   for (const f of (filters || [])) {
     if (!f || f.op !== '==' || !f.field) continue;
     const path = String(f.field).split('.').filter(Boolean);
@@ -186,6 +196,48 @@ function buildFilteredQuery(collection, filters) {
     sql += ` AND data #> $${pathIdx}::text[] = $${valueIdx}::jsonb`;
   }
   return { sql, params };
+}
+
+
+async function runQuery(executor, payload, isAdmin) {
+  validateCollection(payload.collection);
+  if (!isAdmin && !publicReadAllowed('query', payload.collection, payload)) {
+    const e = new Error('Query ini memerlukan login admin.');
+    e.status = 403;
+    throw e;
+  }
+  const filters = Array.isArray(payload.filters) ? payload.filters : [];
+  const built = buildFilteredQuery(payload.collection, filters, payload.excludeFields);
+  const { rows } = await executor.query(built.sql, built.params);
+  let docs = rows.map(r => ({ id: r.id, data: r.data, version: Number(r.version), exists: true }));
+  if (payload.orderBy && payload.orderBy.field) {
+    const dir = payload.orderBy.direction === 'desc' ? -1 : 1;
+    const field = payload.orderBy.field;
+    docs.sort((a,b) => {
+      const av = sortValue(getField(a.data, field));
+      const bv = sortValue(getField(b.data, field));
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }
+  const max = isAdmin ? 5000 : 500;
+  const limit = Math.min(Math.max(Number(payload.limit) || docs.length || 1, 1), max);
+  return docs.slice(0, limit);
+}
+
+async function withSchemaRecovery(fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    // Existing production databases should never pay CREATE TABLE / CREATE INDEX
+    // on every cold start. Only repair the schema if the table is actually missing.
+    if (e && e.code === '42P01') {
+      await ensureSchemaOnce();
+      return fn();
+    }
+    throw e;
+  }
 }
 
 async function writeOp(executor, op, isAdmin, lock = false) {
@@ -247,8 +299,8 @@ export default async function handler(req, res) {
   if (!process.env.DATABASE_URL) return res.status(500).json({ error: 'DATABASE_URL belum dikonfigurasi di Vercel.' });
 
   const started = Date.now();
+  res.setHeader('X-Muja-Db-Region', process.env.VERCEL_REGION || 'local');
   try {
-    await ensureSchemaOnce();
     const pool = getPool();
     const payload = jsonBody(req);
     const action = String(payload.action || '');
@@ -258,34 +310,24 @@ export default async function handler(req, res) {
     if (action === 'getDoc') {
       validateCollection(payload.collection); validateId(payload.id);
       if (!isAdmin && !publicReadAllowed(action, payload.collection, payload)) return res.status(403).json({ error: 'Data ini memerlukan login admin.' });
-      const row = await readRow(pool, payload.collection, payload.id, false);
+      const row = await withSchemaRecovery(() => readRow(pool, payload.collection, payload.id, false));
       res.setHeader('Server-Timing', `db;dur=${Date.now()-started}`);
       return res.status(200).json({ doc: row ? { id: row.id, data: row.data, version: Number(row.version), exists: true } : { id: payload.id, exists: false } });
     }
 
     if (action === 'query') {
-      validateCollection(payload.collection);
-      if (!isAdmin && !publicReadAllowed(action, payload.collection, payload)) return res.status(403).json({ error: 'Query ini memerlukan login admin.' });
-      const filters = Array.isArray(payload.filters) ? payload.filters : [];
-      const built = buildFilteredQuery(payload.collection, filters);
-      const { rows } = await pool.query(built.sql, built.params);
-      let docs = rows.map(r => ({ id: r.id, data: r.data, version: Number(r.version), exists: true }));
-      if (payload.orderBy && payload.orderBy.field) {
-        const dir = payload.orderBy.direction === 'desc' ? -1 : 1;
-        const field = payload.orderBy.field;
-        docs.sort((a,b) => {
-          const av = sortValue(getField(a.data, field));
-          const bv = sortValue(getField(b.data, field));
-          if (av < bv) return -1 * dir;
-          if (av > bv) return 1 * dir;
-          return 0;
-        });
-      }
-      const max = isAdmin ? 5000 : 500;
-      const limit = Math.min(Math.max(Number(payload.limit) || docs.length || 1, 1), max);
-      docs = docs.slice(0, limit);
+      const docs = await withSchemaRecovery(() => runQuery(pool, payload, isAdmin));
       res.setHeader('Server-Timing', `db;dur=${Date.now()-started}`);
       return res.status(200).json({ docs });
+    }
+
+    if (action === 'multiQuery') {
+      if (!isAdmin) return res.status(403).json({ error: 'Multi query memerlukan login admin.' });
+      const queries = Array.isArray(payload.queries) ? payload.queries.slice(0, 12) : [];
+      if (!queries.length) return res.status(400).json({ error: 'Daftar query kosong.' });
+      const results = await withSchemaRecovery(() => Promise.all(queries.map(q => runQuery(pool, q, true))));
+      res.setHeader('Server-Timing', `db;dur=${Date.now()-started}`);
+      return res.status(200).json({ results: results.map(docs => ({ docs })) });
     }
 
     if (['add','set','update','delete'].includes(action)) {
