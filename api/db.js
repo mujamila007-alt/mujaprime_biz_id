@@ -113,7 +113,12 @@ function publicWriteAllowed(op, exists) {
   if (op.type === 'set') return (!exists && PUBLIC_ADD.has(op.collection)) || PUBLIC_SET.has(op.collection) || (op.collection === 'settings' && op.id === 'canva_config' && !exists);
   if (op.type === 'update') {
     if (!PUBLIC_UPDATE.has(op.collection)) return false;
-if (op.collection === 'access_tokens') return ['used','completed'].includes(op.data?.status);
+if (op.collection === 'access_tokens') {
+      // Aktivasi pelanggan: hanya boleh mengunci token menjadi status selesai.
+      // Izinkan update dari halaman status-aktif melalui compatibility API.
+      return ['used','completed'].includes(op.data?.status) ||
+             op.data?.source?.startsWith('status-aktif');
+    }
     if (op.collection === 'poin_products') return Object.keys(op.data || {}).every(k => ['stock','updatedAt'].includes(k)) && Number(op.data?.stock) >= 0;
     return true;
   }
