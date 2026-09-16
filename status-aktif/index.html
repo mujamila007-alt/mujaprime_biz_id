@@ -412,7 +412,9 @@ async function markAccessTokenUsed(source) {
             const freshToken = await transaction.get(tokenDocRef);
             if (!freshToken.exists) throw new Error('TOKEN_NOT_FOUND');
             const tokenData = freshToken.data() || {};
-            if (tokenData.status === 'used' || tokenData.status === 'completed') return 'already';
+          if (tokenData.status === 'used' || tokenData.status === 'completed') {
+    return 'claimed';
+}
             if (tokenData.status !== 'unused') throw new Error('TOKEN_INVALID');
             transaction.update(tokenDocRef, {
                 status: 'used',
@@ -455,7 +457,23 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     currentDeviceId=generateDeviceId();
     try {
         const result=await registerUser(email,whatsapp,currentDurationMonths,currentDeviceId);
-        if(result.success){const tokenResult=await markAccessTokenUsed('status-aktif');if(!tokenResult)return;if(tokenResult==='claimed')await addPoinOnly();document.getElementById('successMessage').textContent=result.message;document.getElementById('successModal').classList.add('open');document.getElementById('userEmail').value='';document.getElementById('userWhatsapp').value='';currentDeviceId='';}
+        if(result.success){
+
+    const tokenResult = await markAccessTokenUsed('status-aktif');
+
+    if(tokenResult === false) return;
+
+    if(tokenResult === 'claimed'){
+        await addPoinOnly();
+    }
+
+    document.getElementById('successMessage').textContent = result.message;
+    document.getElementById('successModal').classList.add('open');
+
+    document.getElementById('userEmail').value='';
+    document.getElementById('userWhatsapp').value='';
+    currentDeviceId='';
+}document.getElementById('successMessage').textContent=result.message;document.getElementById('successModal').classList.add('open');document.getElementById('userEmail').value='';document.getElementById('userWhatsapp').value='';currentDeviceId='';}
         else if(result.conflict){pendingRegistrationData={email,whatsapp,durationMonths:currentDurationMonths,docId:result.docId,emailData:result.emailData,deviceId:currentDeviceId};document.getElementById('conflictMessage').textContent=result.message;document.getElementById('deviceConflictModal').classList.add('open');}
         else showError(result.message||'Gagal mendaftar');
     } catch(err){console.error(err);showError('Terjadi kesalahan sistem.');}
