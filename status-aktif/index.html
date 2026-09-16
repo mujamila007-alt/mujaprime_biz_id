@@ -449,35 +449,72 @@ async function markAccessTokenUsed(source) {
 
 document.getElementById('registrationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const email=document.getElementById('userEmail').value.trim(), whatsapp=document.getElementById('userWhatsapp').value.trim(), btn=document.getElementById('registerBtn');
-    if(!email||!whatsapp){showError('Mohon isi email dan nomor WhatsApp','Data Tidak Lengkap');return;}
-    if(!validateEmail(email)){showError('Format email tidak valid','Email Tidak Valid');return;}
-    if(!validateWhatsapp(whatsapp)){showError('Nomor WhatsApp tidak valid (minimal 10 digit)','Nomor Tidak Valid');return;}
-    btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Memproses...';
-    currentDeviceId=generateDeviceId();
-    try {
-        const result=await registerUser(email,whatsapp,currentDurationMonths,currentDeviceId);
-        if(result.success){
 
-    const tokenResult = await markAccessTokenUsed('status-aktif');
+    const email = document.getElementById('userEmail').value.trim();
+    const whatsapp = document.getElementById('userWhatsapp').value.trim();
+    const btn = document.getElementById('registerBtn');
 
-    if(tokenResult === false) return;
-
-    if(tokenResult === 'claimed'){
-        await addPoinOnly();
+    if (!email || !whatsapp) {
+        showError('Mohon isi email dan nomor WhatsApp', 'Data Tidak Lengkap');
+        return;
     }
 
-    document.getElementById('successMessage').textContent = result.message;
-    document.getElementById('successModal').classList.add('open');
+    if (!validateEmail(email)) {
+        showError('Format email tidak valid', 'Email Tidak Valid');
+        return;
+    }
 
-    document.getElementById('userEmail').value='';
-    document.getElementById('userWhatsapp').value='';
-    currentDeviceId='';
-}document.getElementById('successMessage').textContent=result.message;document.getElementById('successModal').classList.add('open');document.getElementById('userEmail').value='';document.getElementById('userWhatsapp').value='';currentDeviceId='';}
-        else if(result.conflict){pendingRegistrationData={email,whatsapp,durationMonths:currentDurationMonths,docId:result.docId,emailData:result.emailData,deviceId:currentDeviceId};document.getElementById('conflictMessage').textContent=result.message;document.getElementById('deviceConflictModal').classList.add('open');}
-        else showError(result.message||'Gagal mendaftar');
-    } catch(err){console.error(err);showError('Terjadi kesalahan sistem.');}
-    finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-rocket"></i> Aktifkan Sekarang'; }
+    if (!validateWhatsapp(whatsapp)) {
+        showError('Nomor WhatsApp tidak valid', 'Nomor Tidak Valid');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    currentDeviceId = generateDeviceId();
+
+    try {
+        const result = await registerUser(email, whatsapp, currentDurationMonths, currentDeviceId);
+
+        if (result.success) {
+            const tokenResult = await markAccessTokenUsed('status-aktif');
+            if (tokenResult === false) return;
+
+            if (tokenResult === 'claimed') {
+                await addPoinOnly();
+            }
+
+            document.getElementById('successMessage').textContent = result.message || 'Aktivasi berhasil.';
+            document.getElementById('successModal').classList.add('open');
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userWhatsapp').value = '';
+            currentDeviceId = '';
+
+        } else if (result.conflict) {
+            pendingRegistrationData = {
+                email,
+                whatsapp,
+                durationMonths: currentDurationMonths,
+                docId: result.docId,
+                emailData: result.emailData,
+                deviceId: currentDeviceId
+            };
+
+            document.getElementById('conflictMessage').textContent = result.message;
+            document.getElementById('deviceConflictModal').classList.add('open');
+
+        } else {
+            showError(result.message || 'Gagal mendaftar');
+        }
+
+    } catch (err) {
+        console.error(err);
+        showError('Terjadi kesalahan sistem.');
+
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-rocket"></i> Aktifkan Sekarang';
+    }
 });
 
 window.addEventListener('pageshow',function(e){if((e.persisted||(window.performance&&window.performance.navigation.type===2))&&hasJoined){hasJoined=false;window.location.href=REDIRECT_BACK_LINK;}});
