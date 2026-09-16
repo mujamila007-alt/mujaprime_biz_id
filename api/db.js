@@ -100,6 +100,7 @@ function hasFilter(filters, fields) { return (filters || []).some(f => fields.in
 function publicReadAllowed(action, collection, payload) {
   if (PUBLIC_READ_ALL.has(collection)) return true;
   if (action === 'getDoc' && collection === 'ai_chat_logs') return true;
+  if (action === 'getDoc' && collection === 'access_tokens') return true;
   if (action !== 'query') return false;
   const filters = payload.filters || [];
   if (collection === 'registrations') return hasFilter(filters,['email','whatsapp']) && (!payload.limit || payload.limit <= 10);
