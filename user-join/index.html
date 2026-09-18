@@ -416,6 +416,73 @@
             .card { padding: 24px 18px; }
             .mbox { padding: 28px 18px; }
         }
+
+
+
+        @media (max-width: 768px){
+
+    body{
+        overflow-x:hidden;
+    }
+
+
+    .container,
+    .hero,
+    .main-container,
+    .content{
+        width:100% !important;
+        max-width:100% !important;
+        padding-left:20px;
+        padding-right:20px;
+    }
+
+
+    .hero-section,
+    .join-section,
+    .verification-section{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        width:100%;
+    }
+
+
+    h1,
+    .title,
+    .hero-title{
+        font-size:42px !important;
+        line-height:1.1;
+        text-align:left;
+        width:100%;
+    }
+
+
+    .description,
+    .subtitle{
+        width:100%;
+        font-size:16px;
+    }
+
+
+    .card,
+    .form-card,
+    .email-card{
+        width:100% !important;
+        max-width:420px;
+        margin:auto;
+    }
+
+
+    input{
+        width:100% !important;
+    }
+
+
+    button{
+        width:100%;
+    }
+
+}
     </style>
     <!-- MujaPrime install popup: tampil di browser, hilang di WebView/PWA -->
     <link rel="manifest" href="/manifest.json?v=20260604-install-akun-v1">
