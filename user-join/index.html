@@ -48,17 +48,17 @@
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-            overflow-x: hidden;
-        }
+       body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 90px 16px 120px;
+    overflow-x: hidden;
+}
 
         /* Ambient glow */
         body::before {
@@ -482,6 +482,39 @@
         width:100%;
     }
 
+}
+
+
+
+        @media(max-width:480px){
+
+    body{
+        padding-top:100px;
+        padding-bottom:120px;
+        align-items:flex-start;
+    }
+
+    .wrap{
+        width:100%;
+        max-width:360px;
+    }
+
+    .hero h1{
+        font-size:2.2rem;
+        line-height:1.05;
+    }
+
+    .hero p{
+        font-size:0.95rem;
+    }
+
+    .pills{
+        margin-bottom:25px;
+    }
+
+    .card{
+        padding:22px 16px;
+    }
 }
     </style>
     <!-- MujaPrime install popup: tampil di browser, hilang di WebView/PWA -->
