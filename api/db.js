@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import { Pool } from '@neondatabase/serverless';
 import { readAdminSession } from './_auth.js';
 
-const COLLECTIONS = new Set(['access_tokens','ai_chat_logs','app_installs','app_stats','collection_items','deleted_accounts','email_logs','leaderboard','manual_members','orders','poin_products','poin_redeems','products','registered_emails','registrations','sections','settings','user_poins']);
+const COLLECTIONS = new Set(['access_tokens','ai_chat_logs','app_installs','app_stats','collection_items','deleted_accounts','email_logs','leaderboard','manual_members','capcut_members','orders','poin_products','poin_redeems','products','registered_emails','registrations','sections','settings','user_poins']);
 const PUBLIC_READ_ALL = new Set(['products','collection_items','settings','sections','leaderboard','poin_products']);
 const PUBLIC_ADD = new Set(['registrations','registered_emails','orders','access_tokens','user_poins','poin_redeems','ai_chat_logs']);
 const PUBLIC_UPDATE = new Set(['registrations','registered_emails','access_tokens','poin_products','ai_chat_logs']);
