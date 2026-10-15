@@ -253,7 +253,8 @@ th {
     #sectionsTab thead th,
     #leaderboardTab thead th,
     #userPoinLogsTab thead th,
-    #manualMembersTab thead th {
+    #manualMembersTab thead th,
+    #capcutMembersTab thead th {
         background: var(--surface-2) !important;
         background-image: none !important;
         color: var(--text-muted) !important;
@@ -276,7 +277,8 @@ th {
     #sectionsTab tbody td,
     #leaderboardTab tbody td,
     #userPoinLogsTab tbody td,
-    #manualMembersTab tbody td {
+    #manualMembersTab tbody td,
+    #capcutMembersTab tbody td {
         padding: 12px !important;
         border-bottom: 1px solid rgba(255,255,255,0.06) !important;
         vertical-align: middle !important;
@@ -292,7 +294,8 @@ th {
     #sectionsTab table,
     #leaderboardTab table,
     #userPoinLogsTab table,
-    #manualMembersTab table {
+    #manualMembersTab table,
+    #capcutMembersTab table {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -332,7 +335,8 @@ th {
             <button class="tab" onclick="switchTab('products')">📦 Produk</button>
             <button class="tab" onclick="switchTab('sections')">📋 Section Header</button>
             <button class="tab" onclick="switchTab('registrations')">👥 Pendaftar</button>
-            <button class="tab" onclick="switchTab('manualMembers')">🧾 Member Luar</button>
+            <button class="tab" onclick="switchTab('manualMembers')">🧾 Member Canva</button>
+            <button class="tab" onclick="switchTab('capcutMembers')">🎬 Member CapCut</button>
             <button class="tab" onclick="switchTab('leaderboard')">🏆 Top Pembeli</button>
             <button class="tab" onclick="switchTab('poinProducts')">🎁 Tukar Poin</button>
             <button class="tab" onclick="switchTab('poinRedeems')">👤 User Tukar Poin</button>
@@ -550,10 +554,10 @@ th {
             </div>
         </div>
         
-        <!-- MANUAL MEMBERS TAB - DATA MEMBER LUAR / RANDOM -->
+        <!-- MANUAL MEMBERS TAB - DATA MEMBER CANVA -->
         <div id="manualMembersTab" class="section-container" style="display:none;">
             <div class="section-header">
-                <h2>🧾 Data Member Luar / Manual</h2>
+                <h2>🧾 Data Member Canva</h2>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
                     <div class="search-box">
                         <input type="text" id="manualMemberSearchInput" placeholder="Cari nama/WA/email/paket..." onkeyup="if(event.key==='Enter')searchManualMembers()">
@@ -565,9 +569,9 @@ th {
                     <button class="btn btn-primary" onclick="openManualMemberModal()">➕ Tambah Member</button>
                 </div>
             </div>
-            <div class="manual-member-note">Fitur ini khusus untuk <b>member luar/manual</b>, bukan data akun yang sudah terdaftar. Cocok untuk catatan paket private beberapa bulan, misalnya paket 5 bulan yang diperbarui setiap bulan.</div>
+            <div class="manual-member-note">Kelola paket, masa aktif, dan pembaruan bulanan <b>member Canva</b>.</div>
             <div class="stats-grid">
-                <div class="stat-card"><h3>Total Member Manual</h3><div class="value" id="totalManualMembers">0</div></div>
+                <div class="stat-card"><h3>Total Member Canva</h3><div class="value" id="totalManualMembers">0</div></div>
                 <div class="stat-card"><h3>Aktif</h3><div class="value" id="activeManualMembers">0</div></div>
                 <div class="stat-card"><h3>Total Sisa Bulan</h3><div class="value" id="remainingManualMonths">0</div></div>
                 <div class="stat-card"><h3>Selesai</h3><div class="value" id="finishedManualMembers">0</div></div>
@@ -580,6 +584,40 @@ th {
                         </tr>
                     </thead>
                     <tbody id="manualMembersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- CAPCUT MEMBERS TAB -->
+        <div id="capcutMembersTab" class="section-container" style="display:none;">
+            <div class="section-header">
+                <h2>🎬 Data Member CapCut</h2>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <div class="search-box">
+                        <input type="text" id="capcutMemberSearchInput" placeholder="Cari nama/WA/email/paket..." onkeyup="if(event.key==='Enter')searchManualMembers('capcut')">
+                        <button onclick="searchManualMembers('capcut')">🔍</button>
+                        <button class="btn btn-secondary" onclick="resetManualMemberSearch('capcut')">✖</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadManualMembers('capcut')">🔄 Refresh</button>
+                    <button class="btn btn-secondary" onclick="exportManualMembersCSV('capcut')">📥 CSV</button>
+                    <button class="btn btn-primary" onclick="openManualMemberModal('capcut')">➕ Tambah Member</button>
+                </div>
+            </div>
+            <div class="manual-member-note">Kelola paket, masa aktif, dan pembaruan bulanan <b>member CapCut</b>.</div>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total Member CapCut</h3><div class="value" id="totalCapcutMembers">0</div></div>
+                <div class="stat-card"><h3>Aktif</h3><div class="value" id="activeCapcutMembers">0</div></div>
+                <div class="stat-card"><h3>Total Sisa Bulan</h3><div class="value" id="remainingCapcutMonths">0</div></div>
+                <div class="stat-card"><h3>Selesai</h3><div class="value" id="finishedCapcutMembers">0</div></div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama</th><th>WhatsApp</th><th>Email</th><th>Paket</th><th>Durasi</th><th>Bulan / Hari Berjalan</th><th>Mulai</th><th>Aktif Sampai</th><th>Status</th><th>Catatan</th><th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="capcutMembersTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -973,11 +1011,12 @@ th {
     <!-- MANUAL MEMBER MODAL -->
     <div class="modal" id="manualMemberModal">
         <div class="modal-content" style="max-width:650px;">
-            <div class="modal-header"><h2 id="manualMemberModalTitle">Tambah Member Luar</h2><button class="close-btn" onclick="closeManualMemberModal()">✕</button></div>
+            <div class="modal-header"><h2 id="manualMemberModalTitle">Tambah Member Canva</h2><button class="close-btn" onclick="closeManualMemberModal()">✕</button></div>
             <form id="manualMemberForm" onsubmit="saveManualMember(event)">
                 <input type="hidden" id="manualMemberId">
+                <input type="hidden" id="manualMemberType" value="canva">
                 <div class="form-row">
-                    <div class="form-group"><label>Nama Member *</label><input type="text" id="manualMemberName" placeholder="Nama member luar" required></div>
+                    <div class="form-group"><label>Nama Member *</label><input type="text" id="manualMemberName" placeholder="Nama member Canva" required></div>
                     <div class="form-group"><label>Nomor WhatsApp</label><input type="text" id="manualMemberWa" placeholder="08xxxxxxxxxx"></div>
                 </div>
                 <div class="form-group"><label>Email</label><input type="email" id="manualMemberEmail" placeholder="email@email.com"></div>
@@ -1042,7 +1081,29 @@ if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     let uploadedImageBase64 = null;
     let allPoinLogs = [];
     let allPoinRedeems = [];
-    let allManualMembers = [];
+    // Preserve existing manual member records as Canva; CapCut uses its own collection.
+    const manualMemberConfigs = {
+        canva: {
+            type: 'canva', label: 'Canva', collection: 'manual_members', members: [],
+            tableId: 'manualMembersTableBody', searchId: 'manualMemberSearchInput',
+            totalId: 'totalManualMembers', activeId: 'activeManualMembers',
+            remainingId: 'remainingManualMonths', finishedId: 'finishedManualMembers'
+        },
+        capcut: {
+            type: 'capcut', label: 'CapCut', collection: 'capcut_members', members: [],
+            tableId: 'capcutMembersTableBody', searchId: 'capcutMemberSearchInput',
+            totalId: 'totalCapcutMembers', activeId: 'activeCapcutMembers',
+            remainingId: 'remainingCapcutMonths', finishedId: 'finishedCapcutMembers'
+        }
+    };
+    function getManualMemberConfig(type) {
+        return type === 'capcut' ? manualMemberConfigs.capcut : manualMemberConfigs.canva;
+    }
+    function configureManualMemberModal(config) {
+        document.getElementById('manualMemberType').value = config.type;
+        document.getElementById('manualMemberName').placeholder = 'Nama member ' + config.label;
+        document.getElementById('manualMemberPackage').placeholder = 'Contoh: ' + config.label + ' Pro Private';
+    }
     let allAiChats = [];
     let dashboardCache = {};
         // Variabel untuk upload gambar item koleksi
@@ -1123,7 +1184,7 @@ let currentCollectionImageMethod = 'url';
         document.querySelectorAll('.tab').forEach(function(t) {
             t.classList.toggle('active', t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tab + "'"));
         });
-        ['dashboardTab', 'productsTab', 'registrationsTab', 'manualMembersTab', 'leaderboardTab', 'poinProductsTab', 'poinRedeemsTab', 'sectionsTab', 'ordersTab', 'userPoinLogsTab', 'collectionItemsTab', 'appInstallsTab', 'aiChatsTab'].forEach(id => {
+        ['dashboardTab', 'productsTab', 'registrationsTab', 'manualMembersTab', 'capcutMembersTab', 'leaderboardTab', 'poinProductsTab', 'poinRedeemsTab', 'sectionsTab', 'ordersTab', 'userPoinLogsTab', 'collectionItemsTab', 'appInstallsTab', 'aiChatsTab'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
@@ -1131,6 +1192,7 @@ let currentCollectionImageMethod = 'url';
         else if (tab === 'products') { document.getElementById('productsTab').style.display = 'block'; loadProducts(); }
         else if (tab === 'registrations') { document.getElementById('registrationsTab').style.display = 'block'; loadRegistrations(); }
         else if (tab === 'manualMembers') { document.getElementById('manualMembersTab').style.display = 'block'; loadManualMembers(); }
+        else if (tab === 'capcutMembers') { document.getElementById('capcutMembersTab').style.display = 'block'; loadManualMembers('capcut'); }
         else if (tab === 'leaderboard') { document.getElementById('leaderboardTab').style.display = 'block'; loadLeaderboardAdmin(); }
         else if (tab === 'poinProducts') { document.getElementById('poinProductsTab').style.display = 'block'; loadPoinProducts(); }
         else if (tab === 'poinRedeems') { document.getElementById('poinRedeemsTab').style.display = 'block'; loadPoinRedeems(); }
@@ -1147,7 +1209,7 @@ let currentCollectionImageMethod = 'url';
 
 
 
-    // ========== MEMBER LUAR / MANUAL ==========
+    // ========== MEMBER CANVA / CAPCUT ==========
     function manualMemberStatusLabel(status) {
         if (status === 'finished') return 'Selesai';
         if (status === 'paused') return 'Pause';
@@ -1254,23 +1316,25 @@ let currentCollectionImageMethod = 'url';
         return Math.min(100, Math.round((used / total) * 100));
     }
 
-    function renderManualMemberStats(list) {
+    function renderManualMemberStats(list, type = 'canva') {
+        const config = getManualMemberConfig(type);
         const total = list.length;
         const active = list.filter(function(x){ return (x.status || 'active') === 'active'; }).length;
         const finished = list.filter(function(x){ return (x.status || 'active') === 'finished' || manualMemberRemaining(x) <= 0; }).length;
         const remaining = list.reduce(function(sum, x){ return sum + manualMemberRemaining(x); }, 0);
-        setDashText('totalManualMembers', total);
-        setDashText('activeManualMembers', active);
-        setDashText('remainingManualMonths', remaining);
-        setDashText('finishedManualMembers', finished);
+        setDashText(config.totalId, total);
+        setDashText(config.activeId, active);
+        setDashText(config.remainingId, remaining);
+        setDashText(config.finishedId, finished);
     }
 
-    function renderManualMembers(list) {
-        const body = document.getElementById('manualMembersTableBody');
+    function renderManualMembers(list, type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const body = document.getElementById(config.tableId);
         if (!body) return;
-        renderManualMemberStats(list);
+        renderManualMemberStats(list, type);
         if (!list.length) {
-            body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted);">📭 Belum ada data member luar/manual</td></tr>';
+            body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted);">📭 Belum ada data member ' + config.label + '</td></tr>';
             return;
         }
         body.innerHTML = list.map(function(d) {
@@ -1291,20 +1355,21 @@ let currentCollectionImageMethod = 'url';
                 '<td><span class="manual-member-chip ' + manualMemberStatusClass(status) + '">' + manualMemberStatusLabel(status) + '</span></td>' +
                 '<td style="max-width:220px;font-size:12px;color:var(--text-secondary);">' + notes + '</td>' +
                 '<td style="white-space:nowrap;">' +
-                    '<button class="action-btn edit-stock" onclick="addManualMemberMonth(\'' + d.id + '\')" title="Tambah bulan berjalan">+1 Bulan</button>' +
-                    '<button class="action-btn edit-btn" onclick="editManualMember(\'' + d.id + '\')">Edit</button>' +
-                    '<button class="action-btn delete-btn" onclick="deleteManualMember(\'' + d.id + '\')">Hapus</button>' +
+                    '<button class="action-btn edit-stock" onclick="addManualMemberMonth(\'' + d.id + '\',\'' + config.type + '\')" title="Tambah bulan berjalan">+1 Bulan</button>' +
+                    '<button class="action-btn edit-btn" onclick="editManualMember(\'' + d.id + '\',\'' + config.type + '\')">Edit</button>' +
+                    '<button class="action-btn delete-btn" onclick="deleteManualMember(\'' + d.id + '\',\'' + config.type + '\')">Hapus</button>' +
                 '</td>' +
             '</tr>';
         }).join('');
     }
 
-    async function loadManualMembers() {
-        const body = document.getElementById('manualMembersTableBody');
+    async function loadManualMembers(type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const body = document.getElementById(config.tableId);
         if (body) body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;"><div class="loading-spinner"></div></td></tr>';
         try {
-            const snap = await db.collection('manual_members').get();
-            allManualMembers = snap.docs.map(function(doc) {
+            const snap = await db.collection(config.collection).get();
+            config.members = snap.docs.map(function(doc) {
                 return { id: doc.id, ...doc.data() };
             }).sort(function(a, b) {
                 const au = a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0;
@@ -1313,32 +1378,36 @@ let currentCollectionImageMethod = 'url';
                 const bc = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
                 return (bu || bc) - (au || ac);
             });
-            renderManualMembers(allManualMembers);
+            searchManualMembers(type);
         } catch(e) {
             console.error('Manual members error:', e);
-            if (body) body.innerHTML = '<tr><td colspan="11" style="color:#ef4444;text-align:center;padding:30px;">Gagal memuat member luar: ' + escapeHtml(e.message || e) + '</td></tr>';
-            showToast('❌ Gagal memuat member luar/manual', 'error');
+            if (body) body.innerHTML = '<tr><td colspan="11" style="color:#ef4444;text-align:center;padding:30px;">Gagal memuat member ' + config.label + ': ' + escapeHtml(e.message || e) + '</td></tr>';
+            showToast('❌ Gagal memuat member ' + config.label, 'error');
         }
     }
 
-    function searchManualMembers() {
-        const q = (document.getElementById('manualMemberSearchInput').value || '').toLowerCase().trim();
-        if (!q) { renderManualMembers(allManualMembers); return; }
-        const filtered = allManualMembers.filter(function(d) {
+    function searchManualMembers(type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const q = (document.getElementById(config.searchId).value || '').toLowerCase().trim();
+        if (!q) { renderManualMembers(config.members, type); return; }
+        const filtered = config.members.filter(function(d) {
             return [d.name, d.wa, d.email, d.packageName, d.notes, d.status].join(' ').toLowerCase().includes(q);
         });
-        renderManualMembers(filtered);
+        renderManualMembers(filtered, type);
     }
 
-    function resetManualMemberSearch() {
-        const input = document.getElementById('manualMemberSearchInput');
+    function resetManualMemberSearch(type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const input = document.getElementById(config.searchId);
         if (input) input.value = '';
-        renderManualMembers(allManualMembers);
+        renderManualMembers(config.members, type);
     }
 
-    function openManualMemberModal() {
-        document.getElementById('manualMemberModalTitle').textContent = 'Tambah Member Luar';
+    function openManualMemberModal(type = 'canva') {
+        const config = getManualMemberConfig(type);
+        document.getElementById('manualMemberModalTitle').textContent = 'Tambah Member ' + config.label;
         document.getElementById('manualMemberForm').reset();
+        configureManualMemberModal(config);
         document.getElementById('manualMemberId').value = '';
         document.getElementById('manualMemberDuration').value = 1;
         document.getElementById('manualMemberUsed').value = 0;
@@ -1349,10 +1418,12 @@ let currentCollectionImageMethod = 'url';
         document.getElementById('manualMemberModal').classList.add('active');
     }
 
-    function editManualMember(id) {
-        const d = allManualMembers.find(function(x){ return x.id === id; });
+    function editManualMember(id, type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const d = config.members.find(function(x){ return x.id === id; });
         if (!d) { showToast('❌ Data member tidak ditemukan', 'error'); return; }
-        document.getElementById('manualMemberModalTitle').textContent = 'Edit Member Luar';
+        document.getElementById('manualMemberModalTitle').textContent = 'Edit Member ' + config.label;
+        configureManualMemberModal(config);
         document.getElementById('manualMemberId').value = d.id;
         document.getElementById('manualMemberName').value = d.name || '';
         document.getElementById('manualMemberWa').value = d.wa || '';
@@ -1375,6 +1446,8 @@ let currentCollectionImageMethod = 'url';
 
     async function saveManualMember(event) {
         event.preventDefault();
+        const type = document.getElementById('manualMemberType').value;
+        const config = getManualMemberConfig(type);
         const id = document.getElementById('manualMemberId').value;
         const duration = Math.max(1, parseInt(document.getElementById('manualMemberDuration').value) || 1);
         let used = Math.max(0, parseInt(document.getElementById('manualMemberUsed').value) || 0);
@@ -1402,24 +1475,25 @@ let currentCollectionImageMethod = 'url';
         if (payload.remainingMonths <= 0 && payload.status === 'active') payload.status = 'finished';
         try {
             if (id) {
-                await db.collection('manual_members').doc(id).update(payload);
-                showToast('✅ Data member luar berhasil diperbarui', 'success');
+                await db.collection(config.collection).doc(id).update(payload);
+                showToast('✅ Data member ' + config.label + ' berhasil diperbarui', 'success');
             } else {
                 payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                 payload.history = [{ action: 'created', note: 'Dibuat dari admin manual member', createdAt: new Date().toISOString() }];
-                await db.collection('manual_members').add(payload);
-                showToast('✅ Member luar berhasil ditambahkan', 'success');
+                await db.collection(config.collection).add(payload);
+                showToast('✅ Member ' + config.label + ' berhasil ditambahkan', 'success');
             }
             closeManualMemberModal();
-            loadManualMembers();
+            loadManualMembers(type);
         } catch(e) {
             console.error(e);
-            showToast('❌ Gagal menyimpan member luar: ' + (e.message || e), 'error');
+            showToast('❌ Gagal menyimpan member ' + config.label + ': ' + (e.message || e), 'error');
         }
     }
 
-    async function addManualMemberMonth(id) {
-        const d = allManualMembers.find(function(x){ return x.id === id; });
+    async function addManualMemberMonth(id, type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const d = config.members.find(function(x){ return x.id === id; });
         if (!d) { showToast('❌ Data member tidak ditemukan', 'error'); return; }
         const duration = Math.max(1, Number(d.durationMonths || 1));
         const currentUsed = Math.max(0, Number(d.usedMonths || 0));
@@ -1431,7 +1505,7 @@ let currentCollectionImageMethod = 'url';
         const nextRemaining = Math.max(0, duration - nextUsed);
         const nextStatus = nextRemaining <= 0 ? 'finished' : (d.status || 'active');
         try {
-            await db.collection('manual_members').doc(id).update({
+            await db.collection(config.collection).doc(id).update({
                 usedMonths: nextUsed,
                 remainingMonths: nextRemaining,
                 daysElapsed: manualMemberDaysElapsed(d),
@@ -1447,30 +1521,32 @@ let currentCollectionImageMethod = 'url';
                 })
             });
             showToast('✅ Bulan berjalan ditambah menjadi ' + nextUsed + '/' + duration, 'success');
-            loadManualMembers();
+            loadManualMembers(type);
         } catch(e) {
             console.error(e);
             showToast('❌ Gagal update bulan berjalan: ' + (e.message || e), 'error');
         }
     }
 
-    async function deleteManualMember(id) {
-        const d = allManualMembers.find(function(x){ return x.id === id; });
+    async function deleteManualMember(id, type = 'canva') {
+        const config = getManualMemberConfig(type);
+        const d = config.members.find(function(x){ return x.id === id; });
         const label = d ? (d.name || d.wa || id) : id;
-        if (!confirm('Hapus data member luar "' + label + '"? Data ini tidak akan menghapus akun terdaftar.')) return;
+        if (!confirm('Hapus data member ' + config.label + ' "' + label + '"? Data ini tidak akan menghapus akun terdaftar.')) return;
         try {
-            await db.collection('manual_members').doc(id).delete();
-            showToast('✅ Data member luar berhasil dihapus', 'success');
-            loadManualMembers();
+            await db.collection(config.collection).doc(id).delete();
+            showToast('✅ Data member ' + config.label + ' berhasil dihapus', 'success');
+            loadManualMembers(type);
         } catch(e) {
             console.error(e);
-            showToast('❌ Gagal menghapus member luar: ' + (e.message || e), 'error');
+            showToast('❌ Gagal menghapus member ' + config.label + ': ' + (e.message || e), 'error');
         }
     }
 
-    function exportManualMembersCSV() {
+    function exportManualMembersCSV(type = 'canva') {
+        const config = getManualMemberConfig(type);
         const rows = [['Nama','WhatsApp','Email','Paket','Durasi Bulan','Bulan Berjalan','Hari Berjalan','Sisa Bulan','Tanggal Mulai','Aktif Sampai','Status','Catatan']];
-        (allManualMembers || []).forEach(function(d) {
+        (config.members || []).forEach(function(d) {
             rows.push([
                 d.name || '', d.wa || '', d.email || '', d.packageName || '',
                 d.durationMonths || 0, d.usedMonths || 0, manualMemberDaysElapsed(d), manualMemberRemaining(d),
@@ -1478,7 +1554,7 @@ let currentCollectionImageMethod = 'url';
             ]);
         });
         const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-        downloadFile(csv, 'member-luar-manual-mujaprime.csv');
+        downloadFile(csv, 'member-' + config.type + '-mujaprime.csv');
     }
 
     // ========== DASHBOARD ADMIN & AUDIT ==========
