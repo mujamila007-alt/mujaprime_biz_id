@@ -248,7 +248,8 @@
   ],
   "routes": [
     {
-"src": "^/__mode_toko_nonaktif__$"      "dest": "/mulai-membeli.html"
+"src": "^/(?:$|index(?:-old)?\\.html$|detail-produk\\.html$|list-produk(?:-2)?\\.html$|(?:semua-produk|payment|akun-saya|tukar-point|top-pembeli|user-join)(?:/.*)?$)",
+    "dest": "/mulai-membeli.html"
     }
   ]
 }
