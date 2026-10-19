@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d14">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, max-age=0">
+  <title>Mulai Membeli | MUJA PRIME</title>
+  <link rel="icon" type="image/png" href="/muja.png">
+  <style>
+    :root {color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    * {box-sizing:border-box} html,body{margin:0;min-height:100%;}
+    body {background:#0b0d14; color:#f9fafb; min-height:100svh; display:flex; flex-direction:column; overflow-x:hidden;}
+    .ambient{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+    .ambient:before{content:'';position:absolute; width:650px;height:650px;top:-380px;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(255,130,46,.24) 0,rgba(245,164,72,.09) 40%,transparent 70%)}
+    .ambient:after{content:'';position:absolute; width:450px;height:450px;right:-250px;bottom:-250px;background:radial-gradient(circle,rgba(252,201,88,.12),transparent 72%)}
+    header,main,footer{z-index:1;position:relative}
+    header{padding:28px clamp(22px,5vw,72px);display:flex;justify-content:space-between;align-items:center;gap:18px;}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.7px;font-size:18px;}
+    .symbol{height:40px;width:40px;border-radius:12px;display:grid;place-items:center;font-weight:950;font-size:24px;line-height:1;background:linear-gradient(135deg,#fc7c39,#e8b852); color:#1e1009;box-shadow:0 9px 25px rgba(249,128,49,.22)}
+    .status{border:1px solid rgba(255,255,255,.11);border-radius:100px; color:#c7c9d0;font-size:12px;padding:8px 13px;letter-spacing:.25px;background:rgba(255,255,255,.04);}
+    .status:before{content:'';width:7px;height:7px;display:inline-block;background:#f8b04e;border-radius:50%;margin-right:8px;box-shadow:0 0 12px rgba(248,176,78,.8)}
+    main{width:100%;flex:1;display:grid;place-items:center;padding:20px 20px 64px;}
+    .hero{width:min(100%,660px);text-align:center;}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(251,174,96,.23);background:rgba(237,140,53,.08);color:#ffbc80;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:1.15px;text-transform:uppercase;padding:12px 16px;}
+    .spark{font-size:15px}
+    h1{font-size:clamp(40px,8vw,72px);line-height:1.07;letter-spacing:-2px;margin:25px 0 18px;font-weight:850;}
+    h1 span{background:linear-gradient(110deg,#ff8b4b,#f6c26f);color:transparent;-webkit-background-clip:text;background-clip:text;}
+    .lead{font-size:clamp(15px,2.8vw,18px);line-height:1.8;color:#aeb1c0;max-width:545px;margin:0 auto 28px;}
+    .note{font-size:13px;line-height:1.7;color:#a6a7b4;margin:21px auto 0;max-width:480px}
+    .cta{min-height:60px;display:inline-flex;justify-content:center;align-items:center;gap:13px;cursor:pointer;border:0;border-radius:16px;padding:16px 32px;font-size:17px;font-weight:800;text-decoration:none;background:linear-gradient(115deg,#ff833e,#f4ad4f);color:#18100b;box-shadow:0 18px 48px rgba(242,128,44,.23);transition:transform .18s,box-shadow .18s;}
+    .cta:hover{transform:translateY(-2px);box-shadow:0 22px 55px rgba(242,128,44,.34)}
+    .cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
+    .cta.disabled{background:#40404b;box-shadow:none;color:#bdbec7;cursor:not-allowed;transform:none}
+    .helper{display:none;font-size:13px;color:#fbbf8d;background:rgba(255,160,100,.07);border:1px solid rgba(255,160,100,.21);border-radius:12px;padding:13px;margin:17px auto 0;width:min(100%,440px);line-height:1.6}
+    .rules{display:flex;justify-content:center;gap:17px;margin:31px auto 0;align-items:center;flex-wrap:wrap;color:#a7a8b2;font-size:12px}
+    .rules b{font-weight:500;display:inline-flex;gap:7px;align-items:center}
+    .rules b:before{content:'✓';color:#ffb65d}
+    .divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:40px auto 0;}
+    footer{padding:18px 20px 26px;text-align:center;font-size:12px;color:#777987;}
+    @media(max-width:500px){header{padding:20px}.brand{font-size:16px}.status{font-size:10px;padding:7px 10px}h1{letter-spacing:-1px}.hero{padding-top:40px}.cta{width:100%}.rules{gap:12px}}
+    @media(prefers-reduced-motion:reduce){.cta{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <header>
+    <div class="brand"><span class="symbol" aria-hidden="true">M</span><span>MUJA PRIME</span></div>
+    <span class="status">Layanan alternatif tersedia</span>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="judul">
+      <div class="eyebrow"><span class="spark" aria-hidden="true">✦</span> Selamat datang di MUJA PRIME</div>
+      <h1 id="judul">Belanja tetap <span>mudah.</span></h1>
+      <p class="lead">Untuk sementara, pembelian kami arahkan melalui situs alternatif. Klik tombol di bawah untuk melanjutkan belanja.</p>
+      <a class="cta disabled" id="mulaiMembeli" aria-disabled="true" tabindex="-1">
+        Mulai Membeli <span aria-hidden="true">↗</span>
+      </a>
+      <p class="helper" id="pesanKonfigurasi" role="status">Link pembelian belum disetel. Pengelola perlu mengisi URL situs alternatif pada file <strong>mulai-membeli.html</strong>.</p>
+      <p class="note">Halaman toko utama sedang tidak digunakan untuk sementara. Kamu bisa tetap melanjutkan pembelian melalui situs alternatif kami.</p>
+      <div class="divider"></div>
+      <div class="rules"><b>Mudah diakses</b><b>Ramah untuk ponsel</b><b>Tanpa login di halaman ini</b></div>
+    </section>
+  </main>
+  <footer>© 2026 MUJA PRIME. Terima kasih sudah berbelanja bersama kami.</footer>
+  <script>
+    // ================================================================
+    // EDIT LINK DI SINI (harus diawali https://)
+    // Contoh: const LINK_SITUS_ALTERNATIF = "https://tokoku.example";
+    // Jangan isi dengan URL MUJA PRIME sendiri (bisa berputar kembali).
+    // ================================================================
+    const LINK_SITUS_ALTERNATIF = "";
+    // ================================================================
+
+    (function () {
+      const button = document.getElementById('mulaiMembeli');
+      const helper = document.getElementById('pesanKonfigurasi');
+      try {
+        const url = new URL(LINK_SITUS_ALTERNATIF.trim());
+        if (url.protocol !== 'https:' || url.hostname === window.location.hostname) throw new Error('invalid');
+        button.href = url.href;
+        button.classList.remove('disabled');
+        button.removeAttribute('aria-disabled');
+        button.removeAttribute('tabindex');
+        // Membuka di tab sama agar pembelian mudah diteruskan di ponsel.
+      } catch (_) {
+        helper.style.display = 'block';
+      }
+    })();
+  </script>
+</body>
+</html>
