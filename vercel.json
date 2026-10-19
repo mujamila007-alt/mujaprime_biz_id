@@ -56,15 +56,6 @@
       ]
     },
     {
-      "source": "/mulai-membeli.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
       "source": "/api/(.*)",
       "headers": [
         {
@@ -245,11 +236,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": [
     "sin1"
-  ],
-  "routes": [
-    {
-"src": "^/(?:$|index(?:-old)?\\.html$|detail-produk\\.html$|list-produk(?:-2)?\\.html$|(?:semua-produk|payment|akun-saya|tukar-point|top-pembeli|user-join)(?:/.*)?$)",
-    "dest": "/mulai-membeli.html"
-    }
   ]
 }
